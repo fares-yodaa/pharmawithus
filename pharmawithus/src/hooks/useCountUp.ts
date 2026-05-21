@@ -22,6 +22,6 @@ export function useCountUp(end: number, duration: number = 2000, start: number =
 
     requestAnimationFrame(step);
   }, [end, duration, start, trigger]);
-//2
+//222
   return count;
 }
