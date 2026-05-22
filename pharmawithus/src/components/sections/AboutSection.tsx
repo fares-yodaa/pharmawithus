@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Users, GraduationCap, RefreshCw, Target, Lightbulb, Heart } from 'lucide-react';
+import { BrandLogo } from '../auth/BrandLogo';
 
 export function AboutSection() {
   return (
@@ -10,7 +11,12 @@ export function AboutSection() {
             <div className="rounded-3xl bg-white p-8 card-shadow border border-border relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative text-center">
-                <svg className="w-20 h-20 text-brand mx-auto mb-4" viewBox="0 0 64 64" fill="none"><path d="M20 28C20 28 18 14 32 14C46 14 44 28 44 28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><path d="M38 14L44 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><ellipse cx="32" cy="30" rx="16" ry="4" fill="currentColor" opacity="0.1" /><path d="M16 30C16 30 14 50 32 50C50 50 48 30 48 30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><path d="M16 30H48" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><path d="M26 50L24 56H40L38 50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M20 56H44" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                <BrandLogo
+                  size="xl"
+                  showText={false}
+                  linkToHome={false}
+                  className="mx-auto mb-4 justify-center"
+                />
                 <h3 className="font-heading font-bold text-lg text-text">PharmaWithUs</h3>
                 <p className="text-sm text-text-muted mt-1">Structured learning. Better results.</p>
               </div>

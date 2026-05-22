@@ -2,6 +2,8 @@ import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Upload, MessageCircle, ArrowRight, Shield, User, Mail, Phone, ChevronRight, CheckCircle, Video, FileText, HelpCircle } from 'lucide-react';
 import { GlowButton } from './GlowButton';
+import { BrandLogo } from '../auth/BrandLogo';
+import { LOGO_SRC } from '../../lib/brand';
 import type { Course } from '../../data/courses';
 
 interface PaymentModalProps { isOpen: boolean; onClose: () => void; course: Course | null; }
@@ -32,8 +34,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
             {/* Header */}
             <div className="relative px-6 pt-5 pb-4 border-b border-border bg-bg-soft">
               <button onClick={handleClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-bg-muted flex items-center justify-center text-text-muted hover:text-text transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
-              <h2 className="font-heading font-bold text-lg text-text">PharmaWithUs</h2>
-              <p className="text-xs text-brand font-medium">ace with us</p>
+              <BrandLogo size="sm" linkToHome={false} />
             </div>
             {/* Progress */}
             <div className="px-6 py-3 flex items-center justify-between border-b border-border">
@@ -53,7 +54,9 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                     <h3 className="font-heading font-bold text-xl text-text mb-4">Review Your Order</h3>
                     <div className="rounded-2xl border border-border p-4 mb-4">
                       <div className="flex items-start gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-brand-lighter flex items-center justify-center shrink-0"><svg className="w-7 h-7 text-brand" viewBox="0 0 64 64" fill="none"><path d="M20 28C20 28 18 14 32 14C46 14 44 28 44 28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><path d="M38 14L44 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><path d="M16 30C16 30 14 50 32 50C50 50 48 30 48 30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><path d="M16 30H48" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /><path d="M26 50L24 56H40L38 50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M20 56H44" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg></div>
+                        <div className="w-14 h-14 rounded-xl bg-brand-lighter flex items-center justify-center shrink-0 p-1.5">
+                          <img src={LOGO_SRC} alt="" className="h-full w-full object-contain" />
+                        </div>
                         <div className="flex-1"><h4 className="font-heading font-bold text-text">{course.title}</h4><p className="text-xs text-text-muted mt-1">{course.subtitle}</p></div>
                         <div className="text-right shrink-0"><p className="font-heading font-extrabold text-xl text-brand">{course.currency}{course.price}</p><p className="text-xs text-text-muted">One-time</p></div>
                       </div>
@@ -71,7 +74,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                 {step === 'payment' && (
                   <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                     <h3 className="font-heading font-bold text-xl text-text mb-2">Secure Payment</h3>
-                    <p className="text-sm text-text-muted mb-5">Pay easily via CliQ or bank transfer using your name.</p>
+                    <p className="text-sm text-text-muted mb-5">Pay via bank transfer using your name.</p>
                     <div className="rounded-2xl border border-border p-4 mb-5 bg-bg-soft">
                       <p className="text-xs font-heading font-semibold text-text mb-3">How it works</p>
                       <div className="flex items-start justify-between gap-1">

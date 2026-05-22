@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, CheckCircle, XCircle, Clock, Eye, Image } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Image as ImageIcon } from 'lucide-react';
 import { api } from '../../lib/api';
+import {
+  AdminPageHeader,
+  AdminSearchInput,
+  AdminFilterPills,
+  AdminCard,
+  AdminLoading,
+  AdminStatusBadge,
+  AdminEmptyState,
+  AdminModal,
+  AdminDetailRow,
+  AdminFieldLabel,
+} from '../../components/admin/admin-ui';
 
 interface OrderRow {
   id: string;
@@ -17,14 +28,41 @@ interface OrderRow {
   course: { title: string; currency: string } | null;
 }
 
+const FILTERS = ['all', 'pending', 'approved', 'rejected'] as const;
+
+function preloadImage(src: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = document.createElement('img');
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
 export function AdminOrders() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('all');
   const [search, setSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
+  const [orderDetailReady, setOrderDetailReady] = useState(false);
   const [adminNote, setAdminNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+
+  const openOrder = async (order: OrderRow) => {
+    setSelectedOrder(order);
+    setAdminNote(order.admin_note || '');
+    setOrderDetailReady(false);
+    if (order.proof_image_path) {
+      await preloadImage(order.proof_image_path);
+    }
+    setOrderDetailReady(true);
+  };
+
+  const closeOrder = () => {
+    setSelectedOrder(null);
+    setOrderDetailReady(false);
+  };
 
   const fetchOrders = async () => {
     try {
@@ -38,7 +76,9 @@ export function AdminOrders() {
     }
   };
 
-  useEffect(() => { fetchOrders(); }, [filter]);
+  useEffect(() => {
+    fetchOrders();
+  }, [filter]);
 
   const handleAction = async (status: 'approved' | 'rejected') => {
     if (!selectedOrder) return;
@@ -46,7 +86,7 @@ export function AdminOrders() {
     try {
       const actionEndpoint = status === 'approved' ? 'approve' : 'reject';
       await api.post(`/admin/orders/${selectedOrder.id}/${actionEndpoint}`, { admin_note: adminNote || null });
-      setSelectedOrder(null);
+      closeOrder();
       fetchOrders();
     } catch (err) {
       console.error(`Failed to ${status} order:`, err);
@@ -61,66 +101,75 @@ export function AdminOrders() {
     return o.payer_name.toLowerCase().includes(s) || o.payer_email.toLowerCase().includes(s);
   });
 
-  const statusBadge = (status: string) => {
-    const map: Record<string, { color: string; icon: React.ReactNode }> = {
-      pending: { color: 'bg-yellow-50 text-yellow-600 border-yellow-200', icon: <Clock className="w-3 h-3" /> },
-      approved: { color: 'bg-green-50 text-success border-green-200', icon: <CheckCircle className="w-3 h-3" /> },
-      rejected: { color: 'bg-red-50 text-red-500 border-red-200', icon: <XCircle className="w-3 h-3" /> },
-    };
-    const cfg = map[status] || map.pending;
-    return <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border capitalize ${cfg.color}`}>{cfg.icon}{status}</span>;
-  };
-
-  if (loading) return <div className="flex items-center justify-center py-20"><div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading && orders.length === 0) return <AdminLoading />;
 
   return (
     <div>
-      <h1 className="font-heading font-bold text-2xl text-text mb-1">Orders</h1>
-      <p className="text-sm text-text-muted mb-6">Manage and review student payment submissions.</p>
+      <AdminPageHeader
+        title="Orders"
+        description="Review payment proofs, approve access, or reject with a note for the student."
+      />
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white text-sm text-text focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
-        </div>
-        <div className="flex items-center gap-1.5 bg-white border border-border rounded-xl p-1">
-          {(['all', 'pending', 'approved', 'rejected'] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`px-3.5 py-2 rounded-lg text-xs font-semibold capitalize cursor-pointer border-none transition-all ${filter === f ? 'bg-brand text-white' : 'bg-transparent text-text-secondary hover:bg-bg-soft'}`}>{f}</button>
-          ))}
-        </div>
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <AdminSearchInput value={search} onChange={setSearch} placeholder="Search name or email…" />
+        <AdminFilterPills options={FILTERS} value={filter} onChange={setFilter} />
       </div>
 
-      {/* Orders table */}
-      <div className="rounded-2xl bg-white border border-border card-shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+      <AdminCard>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr className="border-b border-border bg-bg-soft">
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Student</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Course</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Amount</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Status</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Date</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Action</th>
+              <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th />
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">No orders found.</td></tr>
+                <tr>
+                  <td colSpan={6}>
+                    <AdminEmptyState message="No orders match your filters." />
+                  </td>
+                </tr>
               ) : (
                 filtered.map((o) => (
-                  <tr key={o.id} className="hover:bg-bg-soft/50 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <p className="text-sm font-semibold text-text">{o.payer_name}</p>
-                      <p className="text-xs text-text-muted">{o.payer_email}</p>
+                  <tr key={o.id}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="admin-avatar">{o.payer_name.charAt(0).toUpperCase()}</div>
+                        <div>
+                          <p className="font-semibold text-text">{o.payer_name}</p>
+                          <p className="text-xs text-text-muted">{o.payer_email}</p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-5 py-3.5 text-sm text-text-secondary">{o.course?.title || '—'}</td>
-                    <td className="px-5 py-3.5 text-sm font-bold text-text">{o.course?.currency || '£'}{o.amount}</td>
-                    <td className="px-5 py-3.5">{statusBadge(o.status)}</td>
-                    <td className="px-5 py-3.5 text-xs text-text-muted">{new Date(o.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                    <td className="px-5 py-3.5">
-                      <button onClick={() => { setSelectedOrder(o); setAdminNote(o.admin_note || ''); }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-brand hover:bg-brand-lighter transition-colors cursor-pointer bg-transparent border-none"><Eye className="w-3.5 h-3.5" /> View</button>
+                    <td className="text-text-secondary">{o.course?.title || '—'}</td>
+                    <td className="font-bold text-text">
+                      {o.course?.currency || '£'}
+                      {o.amount}
+                    </td>
+                    <td>
+                      <AdminStatusBadge status={o.status} />
+                    </td>
+                    <td className="text-text-muted text-xs">
+                      {new Date(o.created_at).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => openOrder(o)}
+                        className="admin-btn admin-btn--ghost admin-btn--sm"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -128,60 +177,96 @@ export function AdminOrders() {
             </tbody>
           </table>
         </div>
-      </div>
+      </AdminCard>
 
-      {/* Order detail modal */}
-      <AnimatePresence>
-        {selectedOrder && (
+      <AdminModal
+        open={!!selectedOrder}
+        onClose={closeOrder}
+        title="Order details"
+        subtitle={selectedOrder?.course?.title}
+        wide
+      >
+        {selectedOrder && !orderDetailReady && (
+          <div className="admin-modal-loading">
+            <AdminLoading />
+          </div>
+        )}
+        {selectedOrder && orderDetailReady && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedOrder(null)} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none">
-              <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl bg-white border border-border p-6 shadow-2xl pointer-events-auto">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="font-heading font-bold text-lg text-text">Order Details</h3>
-                <button onClick={() => setSelectedOrder(null)} className="w-8 h-8 rounded-full bg-bg-muted flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none"><X className="w-4 h-4" /></button>
-              </div>
-              <div className="space-y-3 mb-5">
-                <div className="flex justify-between text-sm"><span className="text-text-muted">Student</span><span className="font-semibold text-text">{selectedOrder.payer_name}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-text-muted">Email</span><span className="text-text">{selectedOrder.payer_email}</span></div>
-                {selectedOrder.payer_phone && <div className="flex justify-between text-sm"><span className="text-text-muted">Phone</span><span className="text-text">{selectedOrder.payer_phone}</span></div>}
-                <div className="flex justify-between text-sm"><span className="text-text-muted">Course</span><span className="font-semibold text-text">{selectedOrder.course?.title}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-text-muted">Amount</span><span className="font-bold text-brand">{selectedOrder.course?.currency || '£'}{selectedOrder.amount}</span></div>
-                <div className="flex justify-between text-sm items-center"><span className="text-text-muted">Status</span>{statusBadge(selectedOrder.status)}</div>
-              </div>
-              {/* Proof image */}
-              {selectedOrder.proof_image_path ? (
-                <div className="mb-5 flex flex-col">
-                  <p className="text-xs font-semibold text-text mb-2">Payment Proof</p>
-                  <div className="relative w-full rounded-xl border border-border bg-bg-soft overflow-hidden min-h-[200px] flex items-center justify-center">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-6 h-6 border-2 border-brand/30 border-t-brand rounded-full animate-spin"></div>
-                    </div>
-                    <img src={selectedOrder.proof_image_path} alt="Payment proof" className="relative z-10 w-full max-h-[400px] object-contain" />
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-5 p-4 rounded-xl bg-bg-soft border border-border text-center"><Image className="w-8 h-8 text-text-muted/30 mx-auto mb-1" /><p className="text-xs text-text-muted">No proof image uploaded</p></div>
+            <div className="mb-5">
+              <AdminDetailRow label="Student">{selectedOrder.payer_name}</AdminDetailRow>
+              <AdminDetailRow label="Email">{selectedOrder.payer_email}</AdminDetailRow>
+              {selectedOrder.payer_phone && (
+                <AdminDetailRow label="Phone">{selectedOrder.payer_phone}</AdminDetailRow>
               )}
-              {/* Admin note */}
+              <AdminDetailRow label="Amount">
+                <span className="text-brand font-bold">
+                  {selectedOrder.course?.currency || '£'}
+                  {selectedOrder.amount}
+                </span>
+              </AdminDetailRow>
+              <AdminDetailRow label="Status">
+                <AdminStatusBadge status={selectedOrder.status} />
+              </AdminDetailRow>
+            </div>
+
+            {selectedOrder.proof_image_path ? (
               <div className="mb-5">
-                <label className="text-xs font-semibold text-text mb-1.5 block">Admin Note</label>
-                <textarea value={adminNote} onChange={(e) => setAdminNote(e.target.value)} placeholder="Add a note (visible to student if rejected)..." rows={2} className="w-full px-4 py-3 rounded-xl border border-border bg-bg-soft text-sm text-text resize-none focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
-              </div>
-              {/* Actions */}
-              {selectedOrder.status === 'pending' ? (
-                <div className="flex gap-3">
-                  <button onClick={() => handleAction('approved')} disabled={actionLoading} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-success text-white font-bold text-sm hover:bg-green-600 transition-colors cursor-pointer disabled:opacity-50"><CheckCircle className="w-4 h-4" /> Approve</button>
-                  <button onClick={() => handleAction('rejected')} disabled={actionLoading} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-50"><XCircle className="w-4 h-4" /> Reject</button>
+                <AdminFieldLabel>Payment proof</AdminFieldLabel>
+                <div className="mt-2 rounded-xl border border-border bg-bg-soft overflow-hidden">
+                  <img
+                    src={selectedOrder.proof_image_path}
+                    alt="Payment proof"
+                    className="w-full max-h-[360px] object-contain"
+                    decoding="sync"
+                  />
                 </div>
-              ) : (
-                <p className="text-center text-sm text-text-muted">This order has already been {selectedOrder.status}.</p>
-              )}
               </div>
-            </motion.div>
+            ) : (
+              <div className="mb-5 p-8 rounded-xl bg-bg-soft border border-dashed border-border text-center">
+                <ImageIcon className="w-10 h-10 text-text-muted/30 mx-auto mb-2" />
+                <p className="text-xs text-text-muted">No proof image uploaded</p>
+              </div>
+            )}
+
+            <div className="mb-5">
+              <AdminFieldLabel>Admin note</AdminFieldLabel>
+              <textarea
+                value={adminNote}
+                onChange={(e) => setAdminNote(e.target.value)}
+                placeholder="Visible to student if rejected…"
+                rows={2}
+                className="admin-input admin-input--textarea mt-1.5"
+              />
+            </div>
+
+            {selectedOrder.status === 'pending' ? (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  className="admin-btn admin-btn--success flex-1"
+                  onClick={() => handleAction('approved')}
+                  disabled={actionLoading}
+                >
+                  <CheckCircle className="w-4 h-4" /> Approve
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn--danger flex-1"
+                  onClick={() => handleAction('rejected')}
+                  disabled={actionLoading}
+                >
+                  <XCircle className="w-4 h-4" /> Reject
+                </button>
+              </div>
+            ) : (
+              <p className="text-center text-sm text-text-muted py-2">
+                This order was already {selectedOrder.status}.
+              </p>
+            )}
           </>
         )}
-      </AnimatePresence>
+      </AdminModal>
     </div>
   );
 }

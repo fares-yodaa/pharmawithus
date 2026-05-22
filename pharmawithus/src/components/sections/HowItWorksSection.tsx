@@ -1,24 +1,59 @@
-import { MousePointer, Zap, Trophy } from 'lucide-react';
-import { TimelineStep } from '../ui/TimelineStep';
+import { motion } from 'framer-motion';
+import { MousePointerClick, CreditCard, GraduationCap } from 'lucide-react';
+const steps = [
+  {
+    step: '01',
+    title: 'Choose your course',
+    description: 'Browse our GPhC-aligned programmes and pick what matches your exam — or message us for guidance.',
+    icon: MousePointerClick,
+  },
+  {
+    step: '02',
+    title: 'Pay & submit proof',
+    description: 'Pay via bank transfer, upload your receipt, and we verify your order (usually within 24 hours).',
+    icon: CreditCard,
+  },
+  {
+    step: '03',
+    title: 'Study & pass',
+    description: 'Access lessons, notes, and mocks from your dashboard. Walk in on exam day with real confidence.',
+    icon: GraduationCap,
+  },
+];
 
 export function HowItWorksSection() {
-  const steps = [
-    { step: 1, title: 'Choose Your Course', description: 'Pick the course that matches your exam. Not sure? Our quick quiz helps you decide in 10 seconds.', icon: <MousePointer className="w-5 h-5" /> },
-    { step: 2, title: 'Get Instant Access', description: 'Pay via bank transfer and get access within 30 minutes. Start studying immediately — no waiting around.', icon: <Zap className="w-5 h-5" /> },
-    { step: 3, title: 'Pass With Confidence', description: 'Work through structured lessons, practice questions, and mock exams. Walk into your exam feeling prepared.', icon: <Trophy className="w-5 h-5" /> },
-  ];
-
   return (
-    <section id="how-it-works" className="relative section-padding">
-      <div className="relative z-10 max-w-3xl mx-auto">
-        <div className="text-center mb-14">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-accent-pink/10 text-accent-pink text-xs font-bold uppercase tracking-wider mb-5">Simple Process</span>
-          <h2 className="font-heading font-extrabold text-3xl md:text-5xl text-text-primary leading-tight">How It <span className="gradient-text">Works</span></h2>
-          <p className="mt-4 text-text-secondary max-w-xl mx-auto text-lg">From signup to exam success in 3 simple steps.</p>
+    <section id="how-it-works" className="section-padding relative overflow-hidden">
+      <div className="relative max-w-6xl mx-auto px-4 md:px-6">
+        <div className="text-center mb-16">
+          <h2 className="font-heading font-extrabold text-3xl md:text-4xl text-text">
+            From signup to <span className="gradient-text">exam day</span>
+          </h2>
+          <p className="mt-3 text-text-secondary max-w-md mx-auto">Three clear steps. No confusion, no hidden hoops.</p>
         </div>
-        <div className="max-w-md mx-auto">
-          {steps.map((s, i) => (
-            <TimelineStep key={s.step} {...s} isLast={i === steps.length - 1} index={i} />
+
+        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          {steps.map(({ step, title, description, icon: Icon }, i) => (
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="relative rounded-3xl border border-border bg-bg-soft/80 p-8 hover:border-brand/25 hover:card-shadow-hover transition-all group"
+            >
+              <span className="absolute top-6 right-6 font-heading font-black text-5xl text-brand/10 group-hover:text-brand/15 transition-colors">
+                {step}
+              </span>
+              <div className="w-12 h-12 rounded-2xl bg-brand text-white flex items-center justify-center mb-6 shadow-lg pink-glow">
+                <Icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading font-bold text-lg text-text mb-2">{title}</h3>
+              <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
+              {i < steps.length - 1 && (
+                <div className="hidden md:block absolute -right-4 top-1/2 w-8 h-px bg-gradient-to-r from-brand/40 to-transparent" />
+              )}
+            </motion.div>
           ))}
         </div>
       </div>

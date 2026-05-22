@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, BookOpen, X, Clock, CheckCircle2, XCircle, ShieldOff, ChevronDown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { BookOpen, CheckCircle2, XCircle, Clock, ShieldOff, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
+import {
+  AdminPageHeader,
+  AdminSearchInput,
+  AdminCard,
+  AdminLoading,
+  AdminStatusBadge,
+  AdminEmptyState,
+  AdminModal,
+  AdminPrimaryButton,
+} from '../../components/admin/admin-ui';
 
 interface UserRow {
   id: string;
@@ -17,8 +27,6 @@ export function AdminUsers() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-
-  // Modal states
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
@@ -37,7 +45,9 @@ export function AdminUsers() {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const loadUserDetails = async (userId: string) => {
     setModalLoading(true);
@@ -76,7 +86,7 @@ export function AdminUsers() {
 
   const revokeCourse = async (courseId: string, courseTitle: string) => {
     if (!selectedUser) return;
-    if (!confirm(`Revoke access to "${courseTitle}" for this user? This will delete the access record.`)) return;
+    if (!confirm(`Revoke access to "${courseTitle}" for this user?`)) return;
     setRevoking(courseId);
     try {
       await api.delete(`/admin/users/${selectedUser.id}/courses/${courseId}`);
@@ -97,57 +107,78 @@ export function AdminUsers() {
     return u.full_name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s);
   });
 
-  if (loading) return <div className="flex items-center justify-center py-20"><div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <AdminLoading />;
 
   return (
     <div>
-      <h1 className="font-heading font-bold text-2xl text-text mb-1">Users</h1>
-      <p className="text-sm text-text-muted mb-6">View and manage student course access.</p>
+      <AdminPageHeader
+        title="Users"
+        description="View students, assign course access manually, and manage enrollment history."
+      />
 
-      <div className="relative w-full mb-6">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white text-sm text-text focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
+      <div className="mb-6 max-w-md">
+        <AdminSearchInput value={search} onChange={setSearch} placeholder="Search name or email…" />
       </div>
 
-      <div className="rounded-2xl bg-white border border-border card-shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+      <AdminCard>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr className="border-b border-border bg-bg-soft">
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">User</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Role</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Orders</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Joined</th>
-                <th className="px-5 py-3 text-xs font-semibold text-text-muted">Manage</th>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Orders</th>
+                <th>Joined</th>
+                <th />
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-text-muted">No users found.</td></tr>
+                <tr>
+                  <td colSpan={5}>
+                    <AdminEmptyState message="No users found." />
+                  </td>
+                </tr>
               ) : (
                 filtered.map((u, i) => (
-                  <motion.tr key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="hover:bg-bg-soft/50 transition-colors">
-                    <td className="px-5 py-3.5">
+                  <motion.tr
+                    key={u.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.02 }}
+                  >
+                    <td>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-brand-lighter flex items-center justify-center text-brand text-xs font-bold shrink-0">{u.full_name.charAt(0).toUpperCase()}</div>
+                        <div className="admin-avatar">{u.full_name.charAt(0).toUpperCase()}</div>
                         <div>
-                          <p className="text-sm font-semibold text-text">{u.full_name}</p>
+                          <p className="font-semibold text-text">{u.full_name}</p>
                           <p className="text-xs text-text-muted">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-bg-muted text-text-muted border border-border capitalize">
-                        <User className="w-3 h-3" /> {u.role}
+                    <td>
+                      <span className="admin-badge admin-badge--pending capitalize">{u.role}</span>
+                    </td>
+                    <td>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
+                        <BookOpen className="w-3.5 h-3.5 text-brand" />
+                        {u.order_count}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5">
-                      <span className="flex items-center gap-1 text-sm text-text-secondary"><BookOpen className="w-3.5 h-3.5" /> {u.order_count}</span>
+                    <td className="text-xs text-text-muted">
+                      {new Date(u.created_at).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-text-muted">{new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                    <td className="px-5 py-3.5">
-                      <button onClick={() => loadUserDetails(u.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-brand hover:bg-brand-lighter transition-colors cursor-pointer bg-transparent border-none">
-                        Manage Courses
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => loadUserDetails(u.id)}
+                        className="admin-btn admin-btn--ghost admin-btn--sm"
+                      >
+                        Manage access
                       </button>
                     </td>
                   </motion.tr>
@@ -156,133 +187,111 @@ export function AdminUsers() {
             </tbody>
           </table>
         </div>
-      </div>
+      </AdminCard>
 
-      {/* User Details Modal */}
-      <AnimatePresence>
-        {(selectedUser || modalLoading) && selectedUser !== false && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedUser(null)} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 40 }}
-              className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none"
-            >
-              <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-white border border-border p-6 shadow-2xl pointer-events-auto">
-              <div className="flex items-center justify-between mb-6 shrink-0">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-brand-lighter flex items-center justify-center text-brand font-bold text-lg">
-                    {selectedUser ? selectedUser.full_name.charAt(0).toUpperCase() : '?'}
-                  </div>
-                  <div>
-                    <h3 className="font-heading font-bold text-xl text-text">
-                      {selectedUser ? selectedUser.full_name : 'Loading User...'}
-                    </h3>
-                    <p className="text-sm text-text-muted">{selectedUser ? selectedUser.email : 'Please wait'}</p>
-                  </div>
+      <AdminModal
+        open={(!!selectedUser || modalLoading) && selectedUser !== false}
+        onClose={() => setSelectedUser(null)}
+        title={selectedUser?.full_name ?? 'User'}
+        subtitle={selectedUser?.email}
+        wide
+      >
+        {modalLoading ? (
+          <AdminLoading />
+        ) : selectedUser ? (
+          <div className="space-y-6">
+            <div className="rounded-2xl p-5 border border-border bg-bg-soft">
+              <h4 className="font-heading font-bold text-sm text-text mb-3">Assign a course</h4>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <select
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="admin-input appearance-none pr-10"
+                  >
+                    <option value="">Select a course…</option>
+                    {courses.map((c) => {
+                      const alreadyOwns = selectedUser.orders.some(
+                        (o: any) => o.course?.id === c.id && o.status === 'approved'
+                      );
+                      return (
+                        <option key={c.id} value={c.id} disabled={alreadyOwns}>
+                          {c.title}
+                          {alreadyOwns ? ' (has access)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                 </div>
-                <button onClick={() => setSelectedUser(null)} className="w-8 h-8 rounded-full bg-bg-muted flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none"><X className="w-4 h-4" /></button>
+                <AdminPrimaryButton onClick={assignCourse} disabled={!selectedCourseId || assigning} className="shrink-0">
+                  <BookOpen className="w-4 h-4" />
+                  {assigning ? 'Assigning…' : 'Assign'}
+                </AdminPrimaryButton>
               </div>
+            </div>
 
-              {modalLoading ? (
-                <div className="flex items-center justify-center py-20 flex-1"><div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>
-              ) : selectedUser && (
-                <div className="overflow-y-auto custom-scrollbar pr-2 space-y-6">
-
-                  {/* Assign Course */}
-                  <div className="bg-bg-soft rounded-2xl p-5 border border-border">
-                    <h4 className="font-heading font-bold text-sm text-text mb-3">Assign a Course</h4>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <div className="relative flex-1">
-                        <select
-                          value={selectedCourseId}
-                          onChange={(e) => setSelectedCourseId(e.target.value)}
-                          className="w-full appearance-none px-4 py-2.5 pr-10 rounded-xl border border-border bg-white text-sm text-text focus:outline-none focus:border-brand"
-                        >
-                          <option value="">Select a course...</option>
-                          {courses.map(c => {
-                            const alreadyOwns = selectedUser.orders.some((o: any) => o.course?.id === c.id && o.status === 'approved');
-                            return (
-                              <option key={c.id} value={c.id} disabled={alreadyOwns}>
-                                {c.title}{alreadyOwns ? ' (Already Has Access)' : ''}
-                              </option>
-                            );
-                          })}
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+            <div>
+              <h4 className="font-heading font-bold text-sm text-text mb-3">
+                Course access · {selectedUser.orders.length} records
+              </h4>
+              {selectedUser.orders.length === 0 ? (
+                <AdminEmptyState message="This user has no orders or courses yet." />
+              ) : (
+                <div className="space-y-3">
+                  {selectedUser.orders.map((o: any) => (
+                    <div
+                      key={o.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-white"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-text truncate">
+                          {o.course?.title || 'Unknown course'}
+                        </p>
+                        <p className="text-xs text-text-muted mt-0.5">
+                          {new Date(o.created_at).toLocaleDateString('en-GB')} ·{' '}
+                          {o.amount > 0 ? `Paid £${o.amount}` : 'Manually assigned'}
+                        </p>
                       </div>
-                      <button
-                        onClick={assignCourse}
-                        disabled={!selectedCourseId || assigning}
-                        className="px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-sm hover:bg-brand-dark transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
-                      >
-                        {assigning ? 'Assigning...' : <><BookOpen className="w-4 h-4" /> Assign</>}
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {o.status === 'approved' && (
+                          <>
+                            <span className="admin-badge admin-badge--approved">
+                              <CheckCircle2 className="w-3 h-3" /> Access
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => revokeCourse(o.course?.id, o.course?.title)}
+                              disabled={revoking === o.course?.id}
+                              className="admin-btn admin-btn--ghost admin-btn--sm text-red-500"
+                            >
+                              <ShieldOff className="w-3.5 h-3.5" />
+                              {revoking === o.course?.id ? '…' : 'Revoke'}
+                            </button>
+                          </>
+                        )}
+                        {o.status === 'pending' && (
+                          <span className="admin-badge admin-badge--pending">
+                            <Clock className="w-3 h-3" /> Pending
+                          </span>
+                        )}
+                        {o.status === 'rejected' && (
+                          <span className="admin-badge admin-badge--rejected">
+                            <XCircle className="w-3 h-3" /> Rejected
+                          </span>
+                        )}
+                        {o.status !== 'approved' && o.status !== 'pending' && o.status !== 'rejected' && (
+                          <AdminStatusBadge status={o.status} />
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Access History */}
-                  <div>
-                    <h4 className="font-heading font-bold text-sm text-text mb-3 flex items-center justify-between">
-                      <span>Course Access History</span>
-                      <span className="text-xs font-normal text-text-muted">{selectedUser.orders.length} records</span>
-                    </h4>
-
-                    {selectedUser.orders.length === 0 ? (
-                      <div className="text-center py-10 bg-bg-soft rounded-2xl border border-border border-dashed">
-                        <p className="text-sm text-text-muted">This user has no orders or courses yet.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {selectedUser.orders.map((o: any) => (
-                          <div key={o.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-white hover:border-brand/30 transition-colors gap-3">
-                            <div className="min-w-0">
-                              <p className="font-semibold text-sm text-text truncate">{o.course?.title || 'Unknown Course'}</p>
-                              <p className="text-xs text-text-muted mt-0.5">
-                                {new Date(o.created_at).toLocaleDateString()} • {o.amount > 0 ? `Paid £${o.amount}` : 'Manually Assigned'}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {o.status === 'approved' && (
-                                <>
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold border border-green-100">
-                                    <CheckCircle2 className="w-3.5 h-3.5" /> Access Granted
-                                  </span>
-                                  <button
-                                    onClick={() => revokeCourse(o.course?.id, o.course?.title)}
-                                    disabled={revoking === o.course?.id}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors cursor-pointer bg-transparent border-none disabled:opacity-50"
-                                  >
-                                    <ShieldOff className="w-3.5 h-3.5" />
-                                    {revoking === o.course?.id ? '...' : 'Revoke'}
-                                  </button>
-                                </>
-                              )}
-                              {o.status === 'pending' && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100">
-                                  <Clock className="w-3.5 h-3.5" /> Pending Payment
-                                </span>
-                              )}
-                              {o.status === 'rejected' && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold border border-red-100">
-                                  <XCircle className="w-3.5 h-3.5" /> Rejected
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
+                  ))}
                 </div>
               )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </div>
+          </div>
+        ) : null}
+      </AdminModal>
     </div>
   );
 }

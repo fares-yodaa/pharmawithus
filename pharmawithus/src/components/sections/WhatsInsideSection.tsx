@@ -1,15 +1,14 @@
 import { motion } from 'framer-motion';
 import { CheckCircle, Users, Zap, Award, Video, FileText, MessageCircle, BarChart3 } from 'lucide-react';
-
 export function WhatsInsideSection() {
   return (
-    <section id="about" className="section-padding bg-bg-soft">
-      <div className="max-w-6xl mx-auto">
+    <section id="about" className="section-padding relative overflow-hidden">
+      <div className="max-w-6xl mx-auto px-4 md:px-6">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-14">
           <h2 className="font-heading font-extrabold text-3xl md:text-4xl text-text">
-            Everything You Need to <span className="text-brand">Ace Your Exams</span>
+            Everything you need to <span className="gradient-text">ace your exams</span>
           </h2>
-          <p className="mt-3 text-text-secondary max-w-lg mx-auto">A complete learning system — not just videos. Here's what you get access to.</p>
+          <p className="mt-3 text-text-secondary max-w-lg mx-auto">A complete learning system — not just videos. Structured for how pharmacy students actually study.</p>
         </motion.div>
 
         {/* Bento grid */}

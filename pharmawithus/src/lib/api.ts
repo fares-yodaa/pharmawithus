@@ -1,9 +1,8 @@
 import { supabase } from './supabase';
 import toast from 'react-hot-toast';
+import { friendlyApiMessage, messageForStatus, parseApiDetail } from './errors';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  'https://pharmawithus-backend-564737438967.me-central1.run.app';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 // ---------------------------------------------------------------------------
 // Session token cache
@@ -57,12 +56,15 @@ function buildHeaders(token: string | null, isJson = true): Record<string, strin
 // ---------------------------------------------------------------------------
 // Core fetch with one automatic retry on 401
 // ---------------------------------------------------------------------------
+type ApiOptions = RequestInit & { silent?: boolean };
+
 async function executeFetch(
   method: string,
   path: string,
-  options: RequestInit = {},
+  options: ApiOptions = {},
   _isRetry = false
 ): Promise<any> {
+  const { silent, ...fetchOptions } = options;
   console.log(`[API] 🚀 ${method} ${path}${_isRetry ? ' (retry)' : ''}`);
 
   const token = await getAccessToken();
@@ -72,12 +74,16 @@ async function executeFetch(
     method,
     headers: buildHeaders(token, !isFormData),
     cache: 'no-store',
-    ...options,
+    ...fetchOptions,
   }).catch((err: Error) => {
-    // Network-level failure (no internet, CORS, DNS, etc.)
     console.error(`[API] ❌ Network error on ${method} ${path}:`, err);
-    toast.error('Unable to connect to the server. Please check your connection.');
-    throw err;
+    const networkMsg =
+      'Unable to connect. Check your internet connection and try again.';
+    if (!silent) toast.error(networkMsg);
+    const wrapped = new Error(networkMsg) as Error & { isApiError: boolean; status: number };
+    wrapped.isApiError = true;
+    wrapped.status = 0;
+    throw wrapped;
   });
 
   console.log(`[API] ← ${response.status} ${method} ${path}`);
@@ -99,27 +105,24 @@ async function executeFetch(
     throw new Error('Session expired');
   }
 
-  return handleResponse(response);
+  return handleResponse(response, silent);
 }
 
-// ---------------------------------------------------------------------------
-// Public API surface
-// ---------------------------------------------------------------------------
 export const api = {
-  get: (path: string) => executeFetch('GET', path),
-  post: (path: string, body: unknown) =>
-    executeFetch('POST', path, { body: JSON.stringify(body) }),
-  put: (path: string, body: unknown) =>
-    executeFetch('PUT', path, { body: JSON.stringify(body) }),
-  delete: (path: string) => executeFetch('DELETE', path),
-  postForm: (path: string, formData: FormData) =>
-    executeFetch('POST', path, { body: formData }),
+  get: (path: string, options?: ApiOptions) => executeFetch('GET', path, options),
+  post: (path: string, body: unknown, options?: ApiOptions) =>
+    executeFetch('POST', path, { ...options, body: JSON.stringify(body) }),
+  put: (path: string, body: unknown, options?: ApiOptions) =>
+    executeFetch('PUT', path, { ...options, body: JSON.stringify(body) }),
+  delete: (path: string, options?: ApiOptions) => executeFetch('DELETE', path, options),
+  postForm: (path: string, formData: FormData, options?: ApiOptions) =>
+    executeFetch('POST', path, { ...options, body: formData }),
 };
 
 // ---------------------------------------------------------------------------
 // Response parser
 // ---------------------------------------------------------------------------
-async function handleResponse(response: Response): Promise<any> {
+async function handleResponse(response: Response, silent = false): Promise<any> {
   if (response.ok) {
     // 204 No Content or similar — nothing to parse
     const contentType = response.headers.get('content-type') || '';
@@ -127,38 +130,48 @@ async function handleResponse(response: Response): Promise<any> {
     return response.json();
   }
 
-  // Error path — try to extract a human-readable message
-  let errorMessage = 'An unexpected error occurred.';
+  let errorMessage = messageForStatus(response.status);
+
   try {
     const body = await response.clone().json();
-    errorMessage = body.detail || body.message || errorMessage;
+    const parsed = parseApiDetail(body?.detail) ?? parseApiDetail(body?.message);
+    if (parsed) errorMessage = parsed;
+    else if (typeof body?.detail === 'string') errorMessage = friendlyApiMessage(body.detail);
+    else if (typeof body?.message === 'string') errorMessage = friendlyApiMessage(body.message);
   } catch {
-    // Non-JSON body (HTML gateway error, etc.)
     if (response.status >= 500) {
-      errorMessage = 'The server is currently unavailable. Please try again later.';
+      errorMessage = messageForStatus(500);
     } else if (response.status === 404) {
-      errorMessage = 'The requested resource was not found.';
-    } else if (response.status === 403) {
-      errorMessage = 'You do not have permission to perform this action.';
+      errorMessage = messageForStatus(404);
     } else {
       try {
         const text = await response.text();
-        if (text && text.length < 200) errorMessage = text;
+        if (text && text.length < 200) errorMessage = friendlyApiMessage(text);
       } catch { /* ignore */ }
     }
   }
 
   console.error(`[API] 🚨 ${response.status}:`, errorMessage);
-  
-  // Show a soft note for user errors (4xx), skip 404s completely (handled by page empty states), 
-  // and only show red errors for 5xx system failures.
-  if (response.status >= 500) {
-    toast.error(errorMessage);
-  } else if (response.status !== 404) {
-    toast(errorMessage, { icon: 'ℹ️' });
+
+  if (!silent) {
+    if (response.status >= 500) {
+      toast.error(errorMessage, { duration: 5000 });
+    } else if (response.status === 401) {
+      /* session flow shows its own toast */
+    } else if (response.status !== 404) {
+      toast(errorMessage, {
+        icon: '⚠️',
+        duration: 4500,
+        style: {
+          background: '#fffbeb',
+          color: '#92400e',
+          border: '1px solid #fde68a',
+        },
+      });
+    }
   }
 
-  const err: any = new Error(errorMessage);
+  const err = new Error(errorMessage) as Error & { status: number; isApiError: boolean };
   err.status = response.status;
   err.isApiError = true;
   throw err;

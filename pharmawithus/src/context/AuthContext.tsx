@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { clearSessionCache } from '../lib/api';
+import { friendlyAuthMessage } from '../lib/errors';
 import type { UserRole } from '../lib/database.types';
 
 interface Profile {
@@ -110,13 +112,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { full_name: fullName },
       },
     });
-    if (error) return { error: error.message };
+    if (error) return { error: friendlyAuthMessage(error.message) };
     return { error: null };
   };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
+    if (error) return { error: friendlyAuthMessage(error.message) };
     return { error: null };
   };
 
@@ -124,8 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fire and forget the server-side sign out so a network hang doesn't block the UI
     supabase.auth.signOut().catch(err => console.warn('Supabase sign out error:', err));
     
-    // Force clear the API promise cache
-    import('../lib/api').then(api => api.clearSessionCache());
+    clearSessionCache();
     
     // Force clear local storage just in case Supabase's background task fails
     for (const key of Object.keys(localStorage)) {

@@ -1,8 +1,20 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { AuthLayout } from '../components/auth/AuthLayout';
+import { AuthField } from '../components/auth/AuthField';
+import { GlowButton } from '../components/ui/GlowButton';
+
+function passwordStrength(pw: string): number {
+  let score = 0;
+  if (pw.length >= 6) score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  return Math.min(score, 4);
+}
 
 export function RegisterPage() {
   const [name, setName] = useState('');
@@ -14,6 +26,12 @@ export function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const courseId = location.state?.courseId as string | undefined;
+  const loginState = courseId ? { courseId, from: `/dashboard/purchase/${courseId}` } : undefined;
+
+  const strength = useMemo(() => passwordStrength(password), [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,90 +56,140 @@ export function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-lighter via-white to-pink-50 px-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md bg-white rounded-3xl border border-border p-8 card-shadow text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-success" />
+      <AuthLayout
+        title="You're in!"
+        subtitle="We've sent a confirmation link to your email. Verify your account, then sign in to start learning."
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-4"
+        >
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-success/20 to-brand/10 flex items-center justify-center border border-success/20">
+            <CheckCircle className="w-10 h-10 text-success" />
           </div>
-          <h1 className="font-heading font-bold text-2xl text-text mb-2">Account Created!</h1>
-          <p className="text-sm text-text-muted mb-6">Check your email to confirm your account, then sign in.</p>
-          <Link to="/login" className="inline-flex items-center justify-center w-full py-3 rounded-xl bg-brand text-white font-heading font-bold text-sm hover:bg-brand-dark transition-colors">
-            Go to Login
-          </Link>
+          <p className="text-sm text-text-secondary mb-8 max-w-xs mx-auto leading-relaxed">
+            Check your inbox (and spam folder) for the confirmation email from PharmaWithUs.
+          </p>
+          <GlowButton
+            className="w-full !rounded-xl !py-3.5"
+            onClick={() => navigate('/login', { state: loginState, replace: true })}
+          >
+            Continue to sign in <ArrowRight className="w-4 h-4" />
+          </GlowButton>
         </motion.div>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-lighter via-white to-pink-50 px-4 py-8">
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" viewBox="0 0 64 64" fill="none"><path d="M20 28C20 28 18 14 32 14C46 14 44 28 44 28" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M38 14L44 6" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M16 30C16 30 14 50 32 50C50 50 48 30 48 30" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M16 30H48" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M26 50L24 56H40L38 50" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M20 56H44" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
-            </div>
-            <span className="font-heading font-bold text-xl text-text">PharmaWithUs</span>
+    <AuthLayout
+      title="Start your journey"
+      subtitle="Create a free account and get structured exam prep trusted by thousands of pharmacy students."
+      courseBanner={
+        courseId ? 'Create an account to enroll in your selected course.' : undefined
+      }
+      footer={
+        <p className="text-sm text-text-muted">
+          Already have an account?{' '}
+          <Link to="/login" state={loginState} className="text-brand font-bold hover:underline">
+            Sign in
           </Link>
+        </p>
+      }
+    >
+      {error && (
+        <div className="auth-alert-error mb-5" role="alert">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
         </div>
+      )}
 
-        <div className="bg-white rounded-3xl border border-border p-8 card-shadow">
-          <h1 className="font-heading font-bold text-2xl text-text text-center mb-1">Create your account</h1>
-          <p className="text-sm text-text-muted text-center mb-6">Join thousands of pharmacy students</p>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthField
+          label="Full name"
+          type="text"
+          icon={<User className="w-4 h-4" />}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your full name"
+          autoComplete="name"
+          required
+        />
 
-          {error && (
-            <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-700">
-              <AlertCircle className="w-4 h-4 shrink-0" />{error}
+        <AuthField
+          label="Email"
+          type="email"
+          icon={<Mail className="w-4 h-4" />}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@university.ac.uk"
+          autoComplete="email"
+          required
+        />
+
+        <div>
+          <AuthField
+            label="Password"
+            type={showPw ? 'text' : 'password'}
+            icon={<Lock className="w-4 h-4" />}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Min. 6 characters"
+            autoComplete="new-password"
+            required
+            trailing={
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-brand-lighter transition-colors cursor-pointer border-none bg-transparent"
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+              >
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
+          />
+          {password.length > 0 && (
+            <div className="auth-password-meter" aria-hidden>
+              {[0, 1, 2, 3].map((i) => (
+                <span
+                  key={i}
+                  className={
+                    i < strength
+                      ? strength >= 3
+                        ? 'is-active is-strong'
+                        : 'is-active'
+                      : ''
+                  }
+                />
+              ))}
             </div>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" required className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-bg-soft text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-bg-soft text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" required className="w-full pl-11 pr-11 py-3 rounded-xl border border-border bg-bg-soft text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text cursor-pointer bg-transparent border-none p-0">
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Confirm Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} placeholder="Confirm your password" required className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-bg-soft text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-              </div>
-            </div>
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-brand text-white font-heading font-bold text-sm hover:bg-brand-dark transition-colors cursor-pointer disabled:opacity-50 shadow-[0_4px_16px_rgba(233,30,123,0.25)]">
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-text-muted mt-6">
-            Already have an account?{' '}
-            <Link to="/login" className="text-brand font-semibold hover:underline">Sign in</Link>
-          </p>
         </div>
 
-        <p className="text-center text-xs text-text-muted mt-6">
-          <Link to="/" className="hover:text-brand transition-colors">Back to homepage</Link>
-        </p>
-      </motion.div>
-    </div>
+        <AuthField
+          label="Confirm password"
+          type={showPw ? 'text' : 'password'}
+          icon={<Lock className="w-4 h-4" />}
+          value={confirmPw}
+          onChange={(e) => setConfirmPw(e.target.value)}
+          placeholder="Repeat your password"
+          autoComplete="new-password"
+          required
+        />
+
+        <GlowButton type="submit" disabled={loading} className="w-full !rounded-xl !py-3.5 mt-2">
+          {loading ? 'Creating account…' : (
+            <>
+              Create account <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </GlowButton>
+      </form>
+
+      <p className="mt-5 text-[11px] text-text-muted text-center leading-relaxed">
+        By signing up you agree to our terms. We&apos;ll never share your email.
+      </p>
+    </AuthLayout>
   );
 }

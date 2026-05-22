@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, Video } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Pencil, Trash2, Check, ToggleLeft, ToggleRight, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
+import {
+  AdminPageHeader,
+  AdminPrimaryButton,
+  AdminLoading,
+  AdminModal,
+  AdminFieldLabel,
+  AdminInput,
+  AdminTextarea,
+  AdminEmptyState,
+} from '../../components/admin/admin-ui';
 
 interface Course {
   id: string;
@@ -223,21 +233,33 @@ export function AdminCourses() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center py-20"><div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <AdminLoading />;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-text mb-1">Courses</h1>
-          <p className="text-sm text-text-muted">Manage your course catalog.</p>
-        </div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white font-heading font-bold text-sm hover:bg-brand-dark transition-colors cursor-pointer"><Plus className="w-4 h-4" /> Add Course</button>
-      </div>
+      <AdminPageHeader
+        title="Courses"
+        description="Create programmes, upload images, manage lessons, and control visibility on the site."
+        action={
+          <AdminPrimaryButton onClick={openCreate}>
+            <Plus className="w-4 h-4" /> Add course
+          </AdminPrimaryButton>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {courses.length === 0 ? (
+        <AdminEmptyState message="No courses yet. Add your first programme to show on the homepage." />
+      ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-5">
         {courses.map((c, i) => (
-          <motion.div key={c.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className={`rounded-2xl bg-white border border-border p-5 card-shadow ${!c.is_active ? 'opacity-60' : ''}`}>
+          <motion.div
+            key={c.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className={`admin-course-card ${!c.is_active ? 'admin-course-card--inactive' : ''}`}
+          >
+            <div className="p-5">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -285,127 +307,96 @@ export function AdminCourses() {
                 <button onClick={() => handleDelete(c.id)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-50 transition-colors cursor-pointer bg-transparent border-none"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
             </div>
+            </div>
           </motion.div>
         ))}
       </div>
+      )}
 
-      {/* Course form modal */}
-      <AnimatePresence>
-        {modalOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModalOpen(false)} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none">
-              <div className="w-full max-w-lg max-h-[88vh] overflow-y-auto custom-scrollbar rounded-3xl bg-white border border-border p-6 shadow-2xl pointer-events-auto">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-heading font-bold text-lg text-text">{editing ? 'Edit Course' : 'Add Course'}</h3>
-                  <button onClick={() => setModalOpen(false)} className="w-8 h-8 rounded-full bg-bg-muted flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none"><X className="w-4 h-4" /></button>
-                </div>
-                <div className="space-y-4">
-                  <div><label className="text-xs font-semibold text-text mb-1 block">Title *</label><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                  <div><label className="text-xs font-semibold text-text mb-1 block">Subtitle</label><input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                  <div><label className="text-xs font-semibold text-text mb-1 block">Description</label><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text resize-none focus:outline-none focus:border-brand" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><label className="text-xs font-semibold text-text mb-1 block">Price *</label><input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                    <div><label className="text-xs font-semibold text-text mb-1 block">Original Price</label><input type="number" value={form.anchor_price} onChange={(e) => setForm({ ...form, anchor_price: Number(e.target.value) })} className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div><label className="text-xs font-semibold text-text mb-1 block">Lessons</label><input type="number" value={form.lesson_count} onChange={(e) => setForm({ ...form, lesson_count: Number(e.target.value) })} className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                    <div><label className="text-xs font-semibold text-text mb-1 block">Duration</label><input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} placeholder="e.g. 12 hours" className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                    <div><label className="text-xs font-semibold text-text mb-1 block">Pass Rate %</label><input type="number" value={form.pass_rate} onChange={(e) => setForm({ ...form, pass_rate: Number(e.target.value) })} className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                  </div>
-                  <div><label className="text-xs font-semibold text-text mb-1 block">Badge (optional)</label><input value={form.badge || ''} onChange={(e) => setForm({ ...form, badge: e.target.value || null })} placeholder="e.g. Most Popular" className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text focus:outline-none focus:border-brand" /></div>
-                  <div><label className="text-xs font-semibold text-text mb-1 block">Features (one per line)</label><textarea value={featuresStr} onChange={(e) => setFeaturesStr(e.target.value)} rows={4} placeholder="Feature 1&#10;Feature 2&#10;Feature 3" className="w-full px-4 py-2.5 rounded-xl border border-border bg-bg-soft text-sm text-text resize-none focus:outline-none focus:border-brand" /></div>
-                  <div>
-                    <label className="text-xs font-semibold text-text mb-1.5 block">Course Image</label>
-                    {picturePreview && (
-                      <img src={picturePreview} alt="Preview" className="w-full h-36 object-cover rounded-xl border border-border mb-2" />
-                    )}
-                    <label className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl border-2 border-dashed border-border bg-bg-soft text-sm text-text-muted hover:border-brand hover:text-brand transition-colors cursor-pointer">
-                      {pictureFile ? pictureFile.name : (picturePreview ? 'Click to change image' : 'Click to upload a course image')}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) { setPictureFile(f); setPicturePreview(URL.createObjectURL(f)); }
-                      }} />
-                    </label>
-                  </div>
-                  <button onClick={handleSave} disabled={saving || !form.title || !form.price} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-brand text-white font-bold text-sm hover:bg-brand-dark transition-colors cursor-pointer disabled:opacity-50"><Check className="w-4 h-4" /> {saving ? 'Saving...' : editing ? 'Update Course' : 'Create Course'}</button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <AdminModal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit course' : 'Add course'} wide>
+        <div className="space-y-4">
+          <div><AdminFieldLabel>Title *</AdminFieldLabel><AdminInput value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1.5" /></div>
+          <div><AdminFieldLabel>Subtitle</AdminFieldLabel><AdminInput value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} className="mt-1.5" /></div>
+          <div><AdminFieldLabel>Description</AdminFieldLabel><AdminTextarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="mt-1.5" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><AdminFieldLabel>Price *</AdminFieldLabel><AdminInput type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="mt-1.5" /></div>
+            <div><AdminFieldLabel>Original price</AdminFieldLabel><AdminInput type="number" value={form.anchor_price} onChange={(e) => setForm({ ...form, anchor_price: Number(e.target.value) })} className="mt-1.5" /></div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div><AdminFieldLabel>Lessons</AdminFieldLabel><AdminInput type="number" value={form.lesson_count} onChange={(e) => setForm({ ...form, lesson_count: Number(e.target.value) })} className="mt-1.5" /></div>
+            <div><AdminFieldLabel>Duration</AdminFieldLabel><AdminInput value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="mt-1.5" /></div>
+            <div><AdminFieldLabel>Pass rate %</AdminFieldLabel><AdminInput type="number" value={form.pass_rate} onChange={(e) => setForm({ ...form, pass_rate: Number(e.target.value) })} className="mt-1.5" /></div>
+          </div>
+          <div><AdminFieldLabel>Badge</AdminFieldLabel><AdminInput value={form.badge || ''} onChange={(e) => setForm({ ...form, badge: e.target.value || null })} className="mt-1.5" /></div>
+          <div><AdminFieldLabel>Features (one per line)</AdminFieldLabel><AdminTextarea value={featuresStr} onChange={(e) => setFeaturesStr(e.target.value)} rows={4} className="mt-1.5" /></div>
+          <div>
+            <AdminFieldLabel>Course image</AdminFieldLabel>
+            {picturePreview && <img src={picturePreview} alt="" className="w-full h-36 object-cover rounded-xl mt-2 mb-2" />}
+            <label className="flex items-center justify-center w-full px-4 py-3 mt-2 rounded-xl border-2 border-dashed border-border bg-bg-soft text-sm text-text-muted hover:border-brand cursor-pointer">
+              {pictureFile ? pictureFile.name : 'Upload image'}
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPictureFile(f); setPicturePreview(URL.createObjectURL(f)); } }} />
+            </label>
+          </div>
+          <AdminPrimaryButton className="w-full" onClick={handleSave} disabled={saving || !form.title || !form.price}>
+            <Check className="w-4 h-4" /> {saving ? 'Saving…' : editing ? 'Update' : 'Create'}
+          </AdminPrimaryButton>
+        </div>
+      </AdminModal>
 
-      {/* Lessons Modal */}
-      <AnimatePresence>
-        {lessonsModalOpen && selectedCourseForLessons && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setLessonsModalOpen(false)} className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none">
-              <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-white border border-border p-6 shadow-2xl pointer-events-auto">
-
-                <div className="flex items-center justify-between mb-5 shrink-0">
-                  <div>
-                    <h3 className="font-heading font-bold text-lg text-text">Manage Lessons</h3>
-                    <p className="text-sm text-text-muted">{selectedCourseForLessons.title}</p>
-                  </div>
-                  <button onClick={() => setLessonsModalOpen(false)} className="w-8 h-8 rounded-full bg-bg-muted flex items-center justify-center text-text-muted hover:text-text cursor-pointer border-none"><X className="w-4 h-4" /></button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
-
-                  {/* Existing Lessons */}
-                  <div>
-                    <h4 className="font-heading font-bold text-sm text-text mb-3">Existing Lessons</h4>
-                    {lessonsLoading ? (
-                      <div className="flex items-center justify-center py-10"><div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" /></div>
-                    ) : courseLessons.length === 0 ? (
-                      <div className="p-5 text-center bg-bg-soft rounded-xl border border-border text-sm text-text-muted">No lessons uploaded yet.</div>
-                    ) : (
-                      <div className="space-y-2">
-                        {courseLessons.map((lesson) => (
-                          <div key={lesson.id} className="flex items-center justify-between p-3 bg-white border border-border rounded-xl">
-                            <div className="flex items-center gap-3">
-                              <span className="w-6 h-6 rounded bg-bg-muted flex items-center justify-center text-xs font-bold text-text-secondary">{lesson.order_index}</span>
-                              <span className="text-sm font-medium text-text">{lesson.title}</span>
-                            </div>
-                            <button onClick={() => handleDeleteLesson(lesson.id)} className="p-2 text-text-muted hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"><Trash2 className="w-4 h-4" /></button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Upload New Lesson */}
-                  <div className="bg-bg-soft rounded-2xl p-5 border border-border">
-                    <h4 className="font-heading font-bold text-sm text-text mb-3">Upload New Lesson</h4>
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-text mb-1 block">Lesson Title</label>
-                          <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} placeholder="e.g. Introduction" className="w-full px-4 py-2 rounded-xl border border-border bg-white text-sm text-text focus:outline-none focus:border-brand" />
-                        </div>
-                        <div className="w-24">
-                          <label className="text-xs font-semibold text-text mb-1 block">Order</label>
-                          <input type="number" value={lessonForm.order_index} onChange={(e) => setLessonForm({ ...lessonForm, order_index: Number(e.target.value) })} className="w-full px-4 py-2 rounded-xl border border-border bg-white text-sm text-text focus:outline-none focus:border-brand" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-text mb-1 block">Video File</label>
-                        <input type="file" accept="video/*" onChange={(e) => setLessonFile(e.target.files?.[0] || null)} className="w-full text-sm text-text file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-lighter file:text-brand hover:file:bg-brand-light cursor-pointer" />
-                      </div>
-                      <button onClick={handleUploadLesson} disabled={lessonUploading || !lessonForm.title || !lessonFile} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand text-white font-bold text-sm hover:bg-brand-dark transition-colors cursor-pointer disabled:opacity-50 mt-2">
-                        {lessonUploading ? 'Uploading...' : 'Upload Lesson'}
-                      </button>
+      <AdminModal
+        open={lessonsModalOpen && !!selectedCourseForLessons}
+        onClose={() => setLessonsModalOpen(false)}
+        title="Manage lessons"
+        subtitle={selectedCourseForLessons?.title}
+        wide
+      >
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-heading font-bold text-sm text-text mb-3">Existing lessons</h4>
+            {lessonsLoading ? (
+              <AdminLoading />
+            ) : courseLessons.length === 0 ? (
+              <AdminEmptyState message="No lessons uploaded yet." />
+            ) : (
+              <div className="space-y-2">
+                {courseLessons.map((lesson) => (
+                  <div key={lesson.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-bg-soft">
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-lg bg-brand-lighter flex items-center justify-center text-xs font-bold text-brand">{lesson.order_index}</span>
+                      <span className="text-sm font-medium text-text">{lesson.title}</span>
                     </div>
+                    <button type="button" onClick={() => handleDeleteLesson(lesson.id)} className="admin-btn admin-btn--ghost admin-btn--sm text-red-500">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="rounded-2xl p-5 border border-border bg-bg-soft">
+            <h4 className="font-heading font-bold text-sm text-text mb-3">Upload new lesson</h4>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <AdminFieldLabel>Title</AdminFieldLabel>
+                  <AdminInput value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="mt-1.5" />
+                </div>
+                <div className="w-24">
+                  <AdminFieldLabel>Order</AdminFieldLabel>
+                  <AdminInput type="number" value={lessonForm.order_index} onChange={(e) => setLessonForm({ ...lessonForm, order_index: Number(e.target.value) })} className="mt-1.5" />
                 </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              <div>
+                <AdminFieldLabel>Video file</AdminFieldLabel>
+                <input type="file" accept="video/*" onChange={(e) => setLessonFile(e.target.files?.[0] || null)} className="w-full mt-1.5 text-sm" />
+              </div>
+              <AdminPrimaryButton className="w-full" onClick={handleUploadLesson} disabled={lessonUploading || !lessonForm.title || !lessonFile}>
+                {lessonUploading ? 'Uploading…' : 'Upload lesson'}
+              </AdminPrimaryButton>
+            </div>
+          </div>
+        </div>
+      </AdminModal>
     </div>
   );
 }

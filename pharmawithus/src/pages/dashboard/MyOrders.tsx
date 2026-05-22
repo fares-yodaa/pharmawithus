@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { FileText, ShoppingBag } from 'lucide-react';
 import { api } from '../../lib/api';
+import { getErrorMessage, LOAD_ERROR_COPY } from '../../lib/errors';
+import {
+  UserLoading,
+  UserPageError,
+  UserPageHeader,
+  UserEmptyState,
+  UserOrderCard,
+  UserPrimaryButton,
+} from '../../components/dashboard/user-ui';
 
 interface OrderRow {
   id: string;
@@ -16,82 +24,62 @@ interface OrderRow {
 export function MyOrders() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    api
-      .get('/users/my-orders')
-      .then((data) => setOrders(data ?? []))
-      .catch((err) => console.error('Failed to fetch orders:', err))
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.get('/users/my-orders', { silent: true });
+      setOrders(data ?? []);
+    } catch (err) {
+      setError(getErrorMessage(err, LOAD_ERROR_COPY.orders));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const statusConfig: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
-    pending:  { icon: <Clock className="w-3.5 h-3.5" />,       color: 'text-yellow-600', bg: 'bg-yellow-50 border-yellow-200',  label: 'Pending'  },
-    approved: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'text-success',    bg: 'bg-green-50 border-green-200',    label: 'Approved' },
-    rejected: { icon: <XCircle className="w-3.5 h-3.5" />,     color: 'text-red-500',    bg: 'bg-red-50 border-red-200',        label: 'Rejected' },
-  };
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (loading) return <UserLoading />;
+
+  if (error) {
+    return <UserPageError message={error} onRetry={load} />;
   }
 
   return (
     <div>
-      <h1 className="font-heading font-bold text-2xl text-text mb-1">My Orders</h1>
-      <p className="text-sm text-text-muted mb-8">Track the status of your course purchases.</p>
+      <UserPageHeader
+        eyebrow="Purchases"
+        title="My Orders"
+        description="Track payment verification and access for each enrollment."
+        action={
+          orders.length === 0 ? (
+            <UserPrimaryButton to="/dashboard/browse" className="!text-xs">
+              Browse courses
+            </UserPrimaryButton>
+          ) : undefined
+        }
+      />
 
       {orders.length === 0 ? (
-        <div className="text-center py-16 rounded-3xl bg-white border border-border card-shadow">
-          <AlertCircle className="w-12 h-12 text-text-muted/30 mx-auto mb-4" />
-          <h3 className="font-heading font-bold text-lg text-text mb-2">No orders yet</h3>
-          <p className="text-sm text-text-muted">Your purchases will appear here.</p>
-        </div>
+        <UserEmptyState
+          icon={<FileText className="w-7 h-7" />}
+          title="No orders yet"
+          description="When you enroll in a course, your order and status will appear here."
+          action={
+            <UserPrimaryButton to="/dashboard/browse">
+              <ShoppingBag className="w-4 h-4" /> Find a course
+            </UserPrimaryButton>
+          }
+        />
       ) : (
         <div className="space-y-3">
-          {orders.map((o, i) => {
-            const sc = statusConfig[o.status] || statusConfig.pending;
-            return (
-              <motion.div
-                key={o.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="rounded-2xl bg-white border border-border p-5 card-shadow"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-heading font-bold text-sm text-text truncate">
-                      {o.course?.title || 'Course'}
-                    </h4>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      {new Date(o.created_at).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                  <p className="font-heading font-bold text-base text-text shrink-0">
-                    {o.course?.currency || '£'}{o.amount ?? '—'}
-                  </p>
-                  <span
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${sc.bg} ${sc.color}`}
-                  >
-                    {sc.icon} {sc.label}
-                  </span>
-                </div>
-                {o.status === 'rejected' && o.admin_note && (
-                  <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-100 text-xs text-red-600">
-                    <strong>Note:</strong> {o.admin_note}
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
+          {orders.map((o, i) => (
+            <UserOrderCard key={o.id} order={o} index={i} />
+          ))}
         </div>
       )}
     </div>

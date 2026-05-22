@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, CheckCircle, DollarSign } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle, PoundSterling, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
+import {
+  AdminPageHeader,
+  AdminStatCard,
+  AdminCard,
+  AdminCardHeader,
+  AdminLoading,
+  AdminStatusBadge,
+  AdminEmptyState,
+} from '../../components/admin/admin-ui';
 
 interface Stats {
   totalOrders: number;
@@ -33,112 +42,114 @@ export function AdminDashboard() {
       .then((orders: RecentOrder[]) => {
         setStats({
           totalOrders: orders.length,
-          pending:  orders.filter((o) => o.status === 'pending').length,
+          pending: orders.filter((o) => o.status === 'pending').length,
           approved: orders.filter((o) => o.status === 'approved').length,
           rejected: orders.filter((o) => o.status === 'rejected').length,
           totalRevenue: orders
             .filter((o) => o.status === 'approved')
             .reduce((sum, o) => sum + Number(o.amount ?? 0), 0),
         });
-        // Show only the 8 most recent
         setRecentOrders(orders.slice(0, 8));
       })
       .catch((err) => console.error('Failed to load dashboard stats:', err))
       .finally(() => setLoading(false));
   }, []);
 
-  const statCards = [
-    { label: 'Total Orders', value: stats.totalOrders,    icon: <ShoppingBag className="w-5 h-5" />, color: 'text-brand',       bg: 'bg-brand-lighter' },
-    { label: 'Pending',      value: stats.pending,         icon: <Clock className="w-5 h-5" />,        color: 'text-yellow-600', bg: 'bg-yellow-50'     },
-    { label: 'Approved',     value: stats.approved,        icon: <CheckCircle className="w-5 h-5" />,  color: 'text-success',    bg: 'bg-green-50'      },
-    { label: 'Revenue',      value: `£${stats.totalRevenue}`, icon: <DollarSign className="w-5 h-5" />, color: 'text-brand',    bg: 'bg-brand-lighter' },
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <AdminLoading />;
 
   return (
     <div>
-      <h1 className="font-heading font-bold text-2xl text-text mb-1">Dashboard</h1>
-      <p className="text-sm text-text-muted mb-8">Overview of your platform activity.</p>
+      <AdminPageHeader
+        title="Dashboard"
+        description="A quick snapshot of orders, revenue, and what needs your attention."
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map((s, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08 }}
-            className="rounded-2xl bg-white border border-border p-5 card-shadow"
-          >
-            <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color} mb-3`}>
-              {s.icon}
-            </div>
-            <p className="font-heading font-extrabold text-2xl text-text">{s.value}</p>
-            <p className="text-xs text-text-muted mt-0.5 font-medium">{s.label}</p>
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-2 min-[1100px]:grid-cols-4 gap-4 mb-8">
+        <AdminStatCard
+          label="Total orders"
+          value={stats.totalOrders}
+          icon={<ShoppingBag className="w-5 h-5" />}
+          tone="brand"
+          delay={0}
+        />
+        <AdminStatCard
+          label="Pending review"
+          value={stats.pending}
+          icon={<Clock className="w-5 h-5" />}
+          tone="amber"
+          delay={0.06}
+        />
+        <AdminStatCard
+          label="Approved"
+          value={stats.approved}
+          icon={<CheckCircle className="w-5 h-5" />}
+          tone="emerald"
+          delay={0.12}
+        />
+        <AdminStatCard
+          label="Revenue"
+          value={`£${stats.totalRevenue.toLocaleString()}`}
+          icon={<PoundSterling className="w-5 h-5" />}
+          tone="ink"
+          delay={0.18}
+        />
       </div>
 
-      {/* Pending alert */}
       {stats.pending > 0 && (
-        <div className="mb-6 flex items-center gap-3 p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
-          <Clock className="w-5 h-5 text-yellow-600 shrink-0" />
-          <p className="text-sm text-yellow-700 font-medium">
-            {stats.pending} order{stats.pending > 1 ? 's' : ''} awaiting your review
-          </p>
-          <Link to="/admin/orders" className="ml-auto text-sm font-bold text-yellow-700 hover:underline">
-            Review now
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="admin-alert admin-alert--amber mb-8"
+        >
+          <Clock className="w-5 h-5 shrink-0" />
+          <span className="flex-1">
+            {stats.pending} order{stats.pending > 1 ? 's' : ''} waiting for your review
+          </span>
+          <Link to="/admin/orders" className="inline-flex items-center gap-1 text-brand font-bold hover:underline shrink-0">
+            Review <ArrowRight className="w-4 h-4" />
           </Link>
-        </div>
+        </motion.div>
       )}
 
-      {/* Recent orders */}
-      <div className="rounded-2xl bg-white border border-border card-shadow overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <h3 className="font-heading font-bold text-base text-text">Recent Orders</h3>
-          <Link to="/admin/orders" className="text-xs font-semibold text-brand hover:underline">View All</Link>
-        </div>
-        <div className="divide-y divide-border">
-          {recentOrders.length === 0 ? (
-            <p className="p-5 text-sm text-text-muted text-center">No orders yet.</p>
-          ) : (
-            recentOrders.map((o) => {
-              const statusColors: Record<string, string> = {
-                pending:  'bg-yellow-50 text-yellow-600 border-yellow-200',
-                approved: 'bg-green-50 text-success border-green-200',
-                rejected: 'bg-red-50 text-red-500 border-red-200',
-              };
-              return (
-                <div key={o.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-bg-soft transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-brand-lighter flex items-center justify-center text-brand text-xs font-bold shrink-0">
-                    {(o.payer_name ?? '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text truncate">{o.payer_name ?? '—'}</p>
-                    <p className="text-xs text-text-muted truncate">{o.course?.title}</p>
-                  </div>
-                  <p className="text-sm font-bold text-text shrink-0">
-                    {o.course?.currency || '£'}{o.amount ?? '—'}
-                  </p>
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border capitalize ${statusColors[o.status] || ''}`}>
-                    {o.status}
-                  </span>
-                  <p className="text-xs text-text-muted shrink-0 hidden sm:block">
-                    {new Date(o.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                  </p>
+      <AdminCard>
+        <AdminCardHeader
+          title="Recent orders"
+          action={
+            <Link to="/admin/orders" className="text-xs font-bold text-brand hover:underline">
+              View all
+            </Link>
+          }
+        />
+        {recentOrders.length === 0 ? (
+          <AdminEmptyState message="No orders yet. They'll show up here when students enroll." />
+        ) : (
+          <div className="divide-y divide-border">
+            {recentOrders.map((o, i) => (
+              <motion.div
+                key={o.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.03 }}
+                className="flex items-center gap-4 px-5 py-4 hover:bg-brand/[0.03] transition-colors"
+              >
+                <div className="admin-avatar">{(o.payer_name ?? '?').charAt(0).toUpperCase()}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text truncate">{o.payer_name ?? '—'}</p>
+                  <p className="text-xs text-text-muted truncate">{o.course?.title}</p>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </div>
+                <p className="text-sm font-bold text-text shrink-0 hidden sm:block">
+                  {o.course?.currency || '£'}
+                  {o.amount ?? '—'}
+                </p>
+                <AdminStatusBadge status={o.status} />
+                <p className="text-xs text-text-muted shrink-0 hidden md:block">
+                  {new Date(o.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </AdminCard>
     </div>
   );
 }

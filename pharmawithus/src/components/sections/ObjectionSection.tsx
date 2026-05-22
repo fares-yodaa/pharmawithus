@@ -6,7 +6,7 @@ const objections = [
   { q: 'Will this actually help me pass my exam?', a: "Our courses have a 94% pass rate — that's real data from 2,800+ students. The content is built by pharmacists who've been through the exact same exams. We focus on what actually appears in exams, not textbook fluff." },
   { q: "I don't have time to study — my exam is next week!", a: "That's exactly who our courses are designed for. Each course is structured in bite-sized modules you can complete in a few hours. Many students have passed after studying with us for just 2-3 days." },
   { q: 'How is this different from free YouTube videos?', a: "YouTube content is scattered, unstructured, and often outdated. Our courses follow a proven learning framework, include 1,100+ practice questions modeled after real exams, and come with expert support." },
-  { q: 'Is my payment secure?', a: "Absolutely. We use CliQ for secure payments. Once verified, your access is activated immediately. Over 2,800 students have paid this way without a single problem." },
+  { q: 'Is my payment secure?', a: "Absolutely. We accept bank transfer only. Once your payment is verified, your access is activated. Over 2,800 students have paid this way without a single problem." },
   { q: 'Can I access the course on my phone?', a: "Yes! Our platform is fully mobile-optimized. Study on your commute, during lunch, or in bed. All you need is a browser — no app download required." },
   { q: "What if the course doesn't work for me?", a: "We stand behind our content. If you complete the course materials and feel it hasn't helped, reach out to us on WhatsApp. We'll work with you personally to address any gaps." },
 ];

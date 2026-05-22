@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
+import { NavBar } from '../components/sections/NavBar';
+import { FooterSection } from '../components/sections/FooterSection';
 
 const faqs = [
   {
@@ -16,8 +17,8 @@ const faqs = [
   {
     category: 'Payment & Access',
     items: [
-      { q: 'Is my payment secure?', a: "Absolutely. We use CliQ for secure payments. Once verified, your access is activated immediately. Over 2,800 students have paid this way without a single problem." },
-      { q: 'How do I pay for a course?', a: "Click 'Buy Now' on any course, then follow the payment flow. You can pay via CliQ or bank transfer. After payment, fill in the confirmation form and you'll receive access within minutes." },
+      { q: 'Is my payment secure?', a: "Absolutely. We accept bank transfer only. Once your payment is verified, your access is activated. Over 2,800 students have paid this way without a single problem." },
+      { q: 'How do I pay for a course?', a: "Click 'Buy Now' on any course, then follow the payment flow. Pay via bank transfer, upload your proof, and you'll receive access once we verify your payment (usually within 24 hours)." },
       { q: 'When do I get access after paying?', a: "Access is typically granted within a few hours of payment confirmation. You'll receive an email with your Zoom link, course dashboard access, and WhatsApp group invite." },
       { q: 'Do you offer refunds?', a: "We stand behind our content. If you have concerns about your purchase, please reach out to us on Instagram or WhatsApp and we'll work with you to find a solution." },
     ]
@@ -36,22 +37,22 @@ const faqs = [
 export function FAQPage() {
   const [openIndex, setOpenIndex] = useState<string | null>('0-0');
 
+  const goCourses = () => {
+    window.location.href = '/#courses';
+  };
+
   return (
     <div className="min-h-screen bg-bg-soft">
-      {/* Header */}
-      <div className="bg-white border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-6">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-brand transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-          <h1 className="font-heading font-extrabold text-3xl md:text-4xl text-text">Frequently Asked Questions</h1>
-          <p className="mt-2 text-text-secondary">Everything you need to know about PharmaWithUs courses.</p>
+      <NavBar onJoinNow={goCourses} />
+      <div className="pt-[4.25rem]">
+        <div className="bg-white border-b border-border">
+          <div className="max-w-3xl mx-auto px-4 py-8 sm:py-10">
+            <h1 className="font-heading font-extrabold text-2xl sm:text-3xl md:text-4xl text-text">Frequently Asked Questions</h1>
+            <p className="mt-2 text-sm sm:text-base text-text-secondary">Everything you need to know about PharmaWithUs courses.</p>
+          </div>
         </div>
-      </div>
 
-      {/* FAQ sections */}
-      <div className="max-w-3xl mx-auto px-4 py-10">
+        <div className="max-w-3xl mx-auto px-4 py-8 sm:py-10">
         {faqs.map((section, si) => (
           <div key={si} className="mb-10">
             <h2 className="font-heading font-bold text-lg text-text mb-4">{section.category}</h2>
@@ -71,7 +72,7 @@ export function FAQPage() {
                       onClick={() => setOpenIndex(isOpen ? null : key)}
                       className="w-full flex items-center justify-between p-5 text-left cursor-pointer bg-transparent border-none"
                     >
-                      <span className="font-heading font-semibold text-text text-[15px] pr-4">{item.q}</span>
+                      <span className="font-heading font-semibold text-text text-sm sm:text-[15px] pr-3 sm:pr-4 text-left">{item.q}</span>
                       <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
                         <ChevronDown className="w-5 h-5 text-brand" />
                       </motion.div>
@@ -100,7 +101,9 @@ export function FAQPage() {
             Message us on Instagram
           </a>
         </div>
+        </div>
       </div>
+      <FooterSection />
     </div>
   );
 }

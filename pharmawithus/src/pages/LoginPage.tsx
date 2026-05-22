@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../lib/api';
+import { AuthLayout } from '../components/auth/AuthLayout';
+import { AuthField } from '../components/auth/AuthField';
+import { GlowButton } from '../components/ui/GlowButton';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,79 +16,113 @@ export function LoginPage() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirect = location.state?.from || '/dashboard';
+  const courseId = location.state?.courseId as string | undefined;
+  const redirectFrom = location.state?.from as string | undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     const { error: err } = await signIn(email, password);
-    setLoading(false);
     if (err) {
+      setLoading(false);
       setError(err);
-    } else {
-      navigate(redirect, { replace: true });
+      return;
+    }
+    try {
+      const me = await api.get('/users/me', { silent: true });
+      if (me.role === 'admin') {
+        navigate('/admin', { replace: true });
+        return;
+      }
+      const destination = courseId
+        ? `/dashboard/purchase/${courseId}`
+        : redirectFrom || '/dashboard';
+      navigate(destination, { replace: true });
+    } catch {
+      navigate(redirectFrom || '/dashboard', { replace: true });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-lighter via-white to-pink-50 px-4">
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" viewBox="0 0 64 64" fill="none"><path d="M20 28C20 28 18 14 32 14C46 14 44 28 44 28" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M38 14L44 6" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M16 30C16 30 14 50 32 50C50 50 48 30 48 30" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M16 30H48" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="M26 50L24 56H40L38 50" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M20 56H44" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
-            </div>
-            <span className="font-heading font-bold text-xl text-text">PharmaWithUs</span>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to access your courses, track orders, and pick up where you left off."
+      courseBanner={
+        courseId ? 'Sign in to complete your course enrollment.' : undefined
+      }
+      footer={
+        <p className="text-sm text-text-muted">
+          Don&apos;t have an account?{' '}
+          <Link to="/register" state={{ courseId }} className="text-brand font-bold hover:underline">
+            Create one free
           </Link>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white rounded-3xl border border-border p-8 card-shadow">
-          <h1 className="font-heading font-bold text-2xl text-text text-center mb-1">Welcome back</h1>
-          <p className="text-sm text-text-muted text-center mb-6">Sign in to your account</p>
-
-          {error && (
-            <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-700">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-bg-soft text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-text mb-1.5 block">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" required className="w-full pl-11 pr-11 py-3 rounded-xl border border-border bg-bg-soft text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text cursor-pointer bg-transparent border-none p-0">
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-brand text-white font-heading font-bold text-sm hover:bg-brand-dark transition-colors cursor-pointer disabled:opacity-50 shadow-[0_4px_16px_rgba(233,30,123,0.25)]">
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-text-muted mt-6">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-brand font-semibold hover:underline">Sign up</Link>
-          </p>
-        </div>
-
-        <p className="text-center text-xs text-text-muted mt-6">
-          <Link to="/" className="hover:text-brand transition-colors">Back to homepage</Link>
         </p>
-      </motion.div>
-    </div>
+      }
+    >
+      {error && (
+        <div className="auth-alert-error mb-5" role="alert">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <AuthField
+          label="Email"
+          type="email"
+          icon={<Mail className="w-4 h-4" />}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@university.ac.uk"
+          autoComplete="email"
+          required
+        />
+
+        <AuthField
+          label="Password"
+          type={showPw ? 'text' : 'password'}
+          icon={<Lock className="w-4 h-4" />}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Your password"
+          autoComplete="current-password"
+          required
+          trailing={
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-brand-lighter transition-colors cursor-pointer border-none bg-transparent"
+              aria-label={showPw ? 'Hide password' : 'Show password'}
+            >
+              {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+        />
+
+        <GlowButton type="submit" disabled={loading} className="w-full !rounded-xl !py-3.5">
+          {loading ? 'Signing in…' : (
+            <>
+              Sign in <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </GlowButton>
+      </form>
+
+      <div className="auth-divider">Secure access</div>
+
+      <ul className="space-y-2.5 text-xs text-text-muted">
+        <li className="flex items-center gap-2">
+          <span className="w-1 h-1 rounded-full bg-brand" />
+          Bank transfer payments verified within 24 hours
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="w-1 h-1 rounded-full bg-brand" />
+          Instant access to courses after approval
+        </li>
+      </ul>
+    </AuthLayout>
   );
 }

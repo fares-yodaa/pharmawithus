@@ -21,7 +21,7 @@ export function StickyBuyBar({ visible, selectedCourse, onBuyClick }: StickyBuyB
           className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
           id="sticky-buy-bar"
         >
-          <div className="bg-white/95 backdrop-blur-xl border-t border-border px-4 py-3">
+          <div className="bg-white/95 backdrop-blur-xl border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-heading font-semibold text-text truncate">

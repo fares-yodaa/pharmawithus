@@ -1,27 +1,57 @@
 import { motion } from 'framer-motion';
-import { BookOpen, FileText, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Video, FileCheck, Trophy, Headphones } from 'lucide-react';
+const features = [
+  {
+    icon: Video,
+    title: 'Structured live classes',
+    desc: 'Interactive sessions with practising pharmacists who know what examiners actually ask.',
+    span: 'lg:col-span-2',
+  },
+  {
+    icon: FileCheck,
+    title: 'Notes, quizzes & mocks',
+    desc: 'Everything in one place — no more hunting across random PDFs and YouTube playlists.',
+    span: '',
+  },
+  {
+    icon: Trophy,
+    title: '94% pass rate',
+    desc: 'Proven outcomes from students who followed the programme.',
+    span: '',
+  },
+  {
+    icon: Headphones,
+    title: 'WhatsApp support',
+    desc: 'Stuck on a topic? Reach out directly — we respond like humans, not bots.',
+    span: 'lg:col-span-2',
+  },
+];
 
 export function WhyChooseSection() {
-  const features = [
-    { icon: <BookOpen className="w-7 h-7 text-brand" />, title: 'Structured Live Classes', desc: 'Learn with expert pharmacists in interactive sessions.' },
-    { icon: <FileText className="w-7 h-7 text-brand" />, title: 'Notes, Quizzes & Exam Prep', desc: 'Everything you need in one place.' },
-    { icon: <TrendingUp className="w-7 h-7 text-brand" />, title: 'High Pass Rate', desc: 'Proven results with happy students.' },
-    { icon: <ShoppingCart className="w-7 h-7 text-brand" />, title: 'Easy Purchase Process', desc: 'Quick, secure & hassle-free.' },
-  ];
-
   return (
-    <section id="why-choose" className="section-padding bg-white">
-      <div className="max-w-5xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-          <h2 className="font-heading font-extrabold text-3xl md:text-4xl text-text">Why Choose Us?</h2>
-        </motion.div>
+    <section id="why-choose" className="section-padding relative">
+      <div className="max-w-6xl mx-auto px-4 md:px-6">
+        <div className="text-center mb-14">
+          <h2 className="font-heading font-extrabold text-3xl md:text-4xl text-text">
+            Built for students who want results, not noise
+          </h2>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((f, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center p-6 rounded-2xl bg-bg-soft border border-border hover:border-brand/20 hover:card-shadow-hover transition-all">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-brand-lighter flex items-center justify-center">{f.icon}</div>
-              <h3 className="font-heading font-bold text-sm text-text mb-2">{f.title}</h3>
-              <p className="text-xs text-text-muted leading-relaxed">{f.desc}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {features.map(({ icon: Icon, title, desc, span }, i) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.06 }}
+              className={`${span} group rounded-3xl border border-border p-8 bg-gradient-to-br from-white to-bg-soft hover:border-brand/30 hover:card-shadow-hover transition-all`}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-brand text-white flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-md">
+                <Icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading font-bold text-lg text-text mb-2">{title}</h3>
+              <p className="text-sm text-text-secondary leading-relaxed">{desc}</p>
             </motion.div>
           ))}
         </div>
