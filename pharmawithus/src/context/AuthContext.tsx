@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -38,13 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const profileRequestId = useRef(0);
 
   const fetchProfile = useCallback(async (userId: string) => {
+    const requestId = ++profileRequestId.current;
     const { data, error } = await supabase
       .from('profiles')
       .select('id, full_name, role, avatar_url')
       .eq('id', userId)
       .single();
+
+    if (requestId !== profileRequestId.current) return;
 
     if (error) {
       console.error('Error fetching profile:', error.message);
@@ -81,12 +85,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Listen for auth changes
         const { data } = supabase.auth.onAuthStateChange(
-          async (_event, s) => {
+          (_event, s) => {
             setSession(s);
             setUser(s?.user ?? null);
             if (s?.user) {
-              await fetchProfile(s.user.id);
+              setProfile(null);
+              setTimeout(() => {
+                void fetchProfile(s.user.id);
+              }, 0);
             } else {
+              profileRequestId.current += 1;
               setProfile(null);
             }
           }
@@ -123,21 +131,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // Fire and forget the server-side sign out so a network hang doesn't block the UI
-    supabase.auth.signOut().catch(err => console.warn('Supabase sign out error:', err));
-    
     clearSessionCache();
-    
+
+    profileRequestId.current += 1;
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) {
+      console.warn('Supabase sign out error:', error.message);
+    }
+
     // Force clear local storage just in case Supabase's background task fails
     for (const key of Object.keys(localStorage)) {
       if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
         localStorage.removeItem(key);
       }
     }
-    
-    setUser(null);
-    setProfile(null);
-    setSession(null);
   };
 
   return (
