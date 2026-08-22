@@ -250,7 +250,7 @@ export function AdminUsers() {
                         </p>
                         <p className="text-xs text-text-muted mt-0.5">
                           {new Date(o.created_at).toLocaleDateString('en-GB')} ·{' '}
-                          {o.amount > 0 ? `Paid £${o.amount}` : 'Manually assigned'}
+                          {o.amount > 0 ? `Paid $${o.amount}` : 'Manually assigned'}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

@@ -40,10 +40,7 @@ export function LandingCourseCard({ course, featured = false, onBuy, index = 0 }
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <div>
-                {course.anchorPrice > 0 && (
-                  <span className="text-sm text-text-muted line-through mr-2">{course.currency}{course.anchorPrice}</span>
-                )}
-                <span className="font-heading font-black text-4xl text-text">{course.currency}{course.price}</span>
+                <span className="font-heading font-black text-4xl text-text">${course.price}</span>
               </div>
               <button
                 type="button"
@@ -96,10 +93,7 @@ export function LandingCourseCard({ course, featured = false, onBuy, index = 0 }
         <h3 className="font-heading font-bold text-base text-text leading-snug line-clamp-2">{course.title}</h3>
         <div className="mt-auto pt-4 flex items-end justify-between gap-2">
           <div>
-            {course.anchorPrice > 0 && (
-              <span className="block text-[11px] text-text-muted line-through">{course.currency}{course.anchorPrice}</span>
-            )}
-            <span className="font-heading font-extrabold text-xl text-text">{course.currency}{course.price}</span>
+            <span className="font-heading font-extrabold text-xl text-text">${course.price}</span>
           </div>
           <button
             type="button"

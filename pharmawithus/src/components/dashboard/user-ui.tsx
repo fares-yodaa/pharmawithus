@@ -296,8 +296,7 @@ export function UserOrderCard({
         <p className="text-xs text-text-muted mt-0.5">{date}</p>
       </div>
       <p className="user-order-card__price">
-        {order.course?.currency || '£'}
-        {order.amount ?? '—'}
+        ${order.amount ?? '—'}
       </p>
       <div className="user-order-card__status">
         <UserStatusBadge status={order.status} />
@@ -363,15 +362,8 @@ export function UserBrowseCourseCard({
         </ul>
         <div className="flex items-end justify-between gap-3 mt-5 pt-5 border-t border-border/80">
           <div>
-            {course.anchor_price != null && course.anchor_price > 0 && (
-              <span className="text-xs text-text-muted line-through block">
-                {course.currency}
-                {course.anchor_price}
-              </span>
-            )}
             <span className="font-heading font-extrabold text-2xl text-brand">
-              {course.currency}
-              {course.price}
+              ${course.price}
             </span>
           </div>
           <UserPrimaryButton to={`/dashboard/purchase/${course.id}`} className="!py-2.5 !px-5 !text-xs shrink-0">

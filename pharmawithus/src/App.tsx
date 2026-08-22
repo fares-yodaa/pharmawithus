@@ -39,6 +39,7 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 
 import type { Course } from './data/courses';
 import { api } from './lib/api';
+import { CURRENCY } from './lib/brand';
 
 function mapCourse(c: Record<string, unknown>): Course {
   return {
@@ -48,7 +49,7 @@ function mapCourse(c: Record<string, unknown>): Course {
     description: String(c.description ?? ''),
     price: Number(c.price),
     anchorPrice: c.anchor_price != null ? Number(c.anchor_price) : 0,
-    currency: String(c.currency || '£'),
+    currency: CURRENCY,
     lessonCount: Number(c.lesson_count ?? 0),
     duration: String(c.duration ?? ''),
     passRate: Number(c.pass_rate ?? 0),

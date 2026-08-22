@@ -149,7 +149,7 @@ export function AdminOrders() {
                     </td>
                     <td className="text-text-secondary">{o.course?.title || '—'}</td>
                     <td className="font-bold text-text">
-                      {o.course?.currency || '£'}
+                      $
                       {o.amount}
                     </td>
                     <td>
@@ -201,7 +201,7 @@ export function AdminOrders() {
               )}
               <AdminDetailRow label="Amount">
                 <span className="text-brand font-bold">
-                  {selectedOrder.course?.currency || '£'}
+                  $
                   {selectedOrder.amount}
                 </span>
               </AdminDetailRow>

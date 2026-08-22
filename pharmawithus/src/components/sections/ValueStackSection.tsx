@@ -3,11 +3,11 @@ import { Check } from 'lucide-react';
 
 export function ValueStackSection() {
   const comparisons = [
-    { item: 'Private Tutoring (10 sessions)', otherPrice: '£500', ourPrice: 'Included' },
-    { item: 'Textbook Collection', otherPrice: '£120', ourPrice: 'Included' },
-    { item: 'Practice Question Bank', otherPrice: '£80', ourPrice: 'Included' },
-    { item: 'Mock Exam Papers', otherPrice: '£60', ourPrice: 'Included' },
-    { item: 'Study Group Access', otherPrice: '£40/mo', ourPrice: 'Included' },
+    { item: 'Private Tutoring (10 sessions)', otherPrice: '$500', ourPrice: 'Included' },
+    { item: 'Textbook Collection', otherPrice: '$120', ourPrice: 'Included' },
+    { item: 'Practice Question Bank', otherPrice: '$80', ourPrice: 'Included' },
+    { item: 'Mock Exam Papers', otherPrice: '$60', ourPrice: 'Included' },
+    { item: 'Study Group Access', otherPrice: '$40/mo', ourPrice: 'Included' },
     { item: 'WhatsApp Expert Support', otherPrice: 'N/A', ourPrice: 'Included' },
   ];
 
@@ -30,7 +30,7 @@ export function ValueStackSection() {
             <span className="gradient-text">What You Pay</span>
           </h2>
           <p className="mt-4 text-text-secondary max-w-xl mx-auto text-lg">
-            You'd spend over £800 getting all this separately. Today, it's yours for a fraction of that.
+            You'd spend over $800 getting all this separately. Today, it's yours for a fraction of that.
           </p>
         </motion.div>
 
@@ -75,10 +75,10 @@ export function ValueStackSection() {
           <div className="grid grid-cols-3 px-6 py-5 bg-gradient-to-r from-accent-pink/5 to-accent-purple/5 border-t border-border-subtle">
             <span className="text-sm font-heading font-bold text-text-primary">Total Value</span>
             <span className="text-sm text-text-muted text-center">
-              <span className="line-through">£800+</span>
+              <span className="line-through">$800+</span>
             </span>
             <div className="text-center">
-              <span className="text-2xl font-heading font-extrabold gradient-text">From £19</span>
+              <span className="text-2xl font-heading font-extrabold gradient-text">From $19</span>
             </div>
           </div>
         </motion.div>
@@ -91,7 +91,7 @@ export function ValueStackSection() {
           className="mt-8 text-center"
         >
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-success/10 border border-success/20">
-            <span className="text-success text-sm font-bold">You save over £750 today</span>
+            <span className="text-success text-sm font-bold">You save over $750 today</span>
           </div>
         </motion.div>
       </div>

@@ -106,8 +106,7 @@ export function CourseCard({ course, isSelected, onSelect, onBuy, index }: Cours
 
         {/* Price */}
         <div className="mb-5">
-          <span className="text-text-muted text-sm line-through mr-2">{course.currency}{course.anchorPrice}</span>
-          <span className="text-[28px] font-heading font-extrabold text-text">{course.currency}{course.price}</span>
+          <span className="text-[28px] font-heading font-extrabold text-text">${course.price}</span>
         </div>
 
         {/* Buttons */}

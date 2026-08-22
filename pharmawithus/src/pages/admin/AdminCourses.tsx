@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Pencil, Trash2, Check, ToggleLeft, ToggleRight, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -32,7 +32,37 @@ interface Course {
   created_at: string;
 }
 
-const emptyCourse = { title: '', subtitle: '', description: '', price: 0, anchor_price: 0, currency: '£', lesson_count: 0, duration: '', pass_rate: 0, badge: null, features: [], is_active: true, picture_url: null };
+const emptyCourse = {
+  title: '',
+  subtitle: '',
+  description: '',
+  price: '',
+  currency: '$',
+  lesson_count: '',
+  duration: '',
+  pass_rate: '',
+  badge: null,
+  features: [],
+  is_active: true,
+  picture_url: null,
+};
+
+const NON_NEGATIVE_KEYS = new Set(['-', '+', 'e', 'E']);
+
+function blockNegativeKeys(e: KeyboardEvent<HTMLInputElement>) {
+  if (NON_NEGATIVE_KEYS.has(e.key)) e.preventDefault();
+}
+
+function parseNonNegative(raw: string, integer = false): string | null {
+  if (raw === '') return '';
+  if (raw.startsWith('-')) return null;
+  if (integer) {
+    if (!/^\d+$/.test(raw)) return null;
+    return raw;
+  }
+  if (!/^\d*\.?\d*$/.test(raw)) return null;
+  return raw;
+}
 
 export function AdminCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -50,7 +80,7 @@ export function AdminCourses() {
   const [selectedCourseForLessons, setSelectedCourseForLessons] = useState<Course | null>(null);
   const [courseLessons, setCourseLessons] = useState<any[]>([]);
   const [lessonsLoading, setLessonsLoading] = useState(false);
-  const [lessonForm, setLessonForm] = useState({ title: '', order_index: 0 });
+  const [lessonForm, setLessonForm] = useState({ title: '', order_index: '' });
   const [lessonFile, setLessonFile] = useState<File | null>(null);
   const [lessonUploading, setLessonUploading] = useState(false);
 
@@ -82,15 +112,15 @@ export function AdminCourses() {
       title: c.title,
       subtitle: c.subtitle || '',
       description: c.description || '',
-      price: c.price,
-      anchor_price: c.anchor_price || 0,
-      currency: c.currency,
-      lesson_count: c.lesson_count,
+      price: c.price === 0 ? '' : String(c.price),
+      currency: '$',
+      lesson_count: c.lesson_count === 0 ? '' : String(c.lesson_count),
       duration: c.duration || '',
-      pass_rate: c.pass_rate || 0,
+      pass_rate: c.pass_rate == null || c.pass_rate === 0 ? '' : String(c.pass_rate),
       badge: c.badge || null,
       features: c.features,
-      is_active: c.is_active
+      is_active: c.is_active,
+      picture_url: c.picture_url || null,
     });
     setFeaturesStr((c.features || []).join('\n'));
     setPictureFile(null);
@@ -115,16 +145,37 @@ export function AdminCourses() {
   };
 
   const handleSave = async () => {
+    const price = Number(form.price);
+    const lessonCount = form.lesson_count === '' ? 0 : Number(form.lesson_count);
+    const passRate = form.pass_rate === '' ? null : Number(form.pass_rate);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error('Price must be greater than 0');
+      return;
+    }
+    if (!Number.isFinite(lessonCount) || lessonCount < 0) {
+      toast.error('Lesson count cannot be negative');
+      return;
+    }
+    if (passRate != null && (!Number.isFinite(passRate) || passRate < 0 || passRate > 100)) {
+      toast.error('Pass rate must be between 0 and 100');
+      return;
+    }
+
     setSaving(true);
     const payload = {
       ...form,
+      price,
+      lesson_count: lessonCount,
       features: featuresStr.split('\n').map((f) => f.trim()).filter(Boolean),
       badge: form.badge || null,
       subtitle: form.subtitle || null,
       description: form.description || null,
       duration: form.duration || null,
-      pass_rate: form.pass_rate || null,
-      anchor_price: form.anchor_price || null
+      pass_rate: passRate,
+      currency: '$',
+      anchor_price: null,
+      picture_url: form.picture_url || editing?.picture_url || null,
     };
 
     try {
@@ -169,7 +220,7 @@ export function AdminCourses() {
 
   const toggleActive = async (c: Course) => {
     try {
-      const payload = { ...c, is_active: !c.is_active };
+      const payload = { ...c, is_active: !c.is_active, currency: '$', anchor_price: null };
       // Backend expects full CourseCreate object for PUT
       await api.put(`/admin/courses/${c.id}`, payload);
       toast.success(`Course ${!c.is_active ? 'activated' : 'deactivated'}!`);
@@ -186,7 +237,7 @@ export function AdminCourses() {
     try {
       const data = await api.get(`/admin/courses/${c.id}/lessons`);
       setCourseLessons(data);
-      setLessonForm({ title: '', order_index: data.length });
+      setLessonForm({ title: '', order_index: String(data.length) });
     } catch (err) {
       console.error('Failed to fetch lessons:', err);
     } finally {
@@ -199,7 +250,8 @@ export function AdminCourses() {
     setLessonUploading(true);
     const formData = new FormData();
     formData.append('title', lessonForm.title);
-    formData.append('order_index', lessonForm.order_index.toString());
+    const orderIndex = lessonForm.order_index === '' ? 0 : Number(lessonForm.order_index);
+    formData.append('order_index', String(Math.max(0, orderIndex)));
     formData.append('file', lessonFile);
 
     try {
@@ -209,7 +261,7 @@ export function AdminCourses() {
 
       const data = await api.get(`/admin/courses/${selectedCourseForLessons.id}/lessons`);
       setCourseLessons(data);
-      setLessonForm({ title: '', order_index: data.length });
+      setLessonForm({ title: '', order_index: String(data.length) });
       fetchCourses();
     } catch (err) {
       console.error('Failed to upload lesson:', err);
@@ -286,8 +338,7 @@ export function AdminCourses() {
                 )}
               </div>
               <div className="text-right shrink-0">
-                <p className="font-heading font-extrabold text-lg text-text">{c.currency}{c.price}</p>
-                {c.anchor_price && <p className="text-xs text-text-muted line-through">{c.currency}{c.anchor_price}</p>}
+                <p className="font-heading font-extrabold text-lg text-text">${c.price}</p>
               </div>
             </div>
             <p className="text-sm text-text-secondary mb-3 line-clamp-2">{c.description}</p>
@@ -318,14 +369,56 @@ export function AdminCourses() {
           <div><AdminFieldLabel>Title *</AdminFieldLabel><AdminInput value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1.5" /></div>
           <div><AdminFieldLabel>Subtitle</AdminFieldLabel><AdminInput value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} className="mt-1.5" /></div>
           <div><AdminFieldLabel>Description</AdminFieldLabel><AdminTextarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="mt-1.5" /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><AdminFieldLabel>Price *</AdminFieldLabel><AdminInput type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} className="mt-1.5" /></div>
-            <div><AdminFieldLabel>Original price</AdminFieldLabel><AdminInput type="number" value={form.anchor_price} onChange={(e) => setForm({ ...form, anchor_price: Number(e.target.value) })} className="mt-1.5" /></div>
+          <div>
+            <AdminFieldLabel>Price (USD) *</AdminFieldLabel>
+            <AdminInput
+              type="text"
+              inputMode="decimal"
+              min={0}
+              value={form.price}
+              onKeyDown={blockNegativeKeys}
+              onChange={(e) => {
+                const next = parseNonNegative(e.target.value);
+                if (next !== null) setForm({ ...form, price: next });
+              }}
+              className="mt-1.5"
+            />
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <div><AdminFieldLabel>Lessons</AdminFieldLabel><AdminInput type="number" value={form.lesson_count} onChange={(e) => setForm({ ...form, lesson_count: Number(e.target.value) })} className="mt-1.5" /></div>
+            <div>
+              <AdminFieldLabel>Lessons</AdminFieldLabel>
+              <AdminInput
+                type="text"
+                inputMode="numeric"
+                min={0}
+                value={form.lesson_count}
+                onKeyDown={blockNegativeKeys}
+                onChange={(e) => {
+                  const next = parseNonNegative(e.target.value, true);
+                  if (next !== null) setForm({ ...form, lesson_count: next });
+                }}
+                className="mt-1.5"
+              />
+            </div>
             <div><AdminFieldLabel>Duration</AdminFieldLabel><AdminInput value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="mt-1.5" /></div>
-            <div><AdminFieldLabel>Pass rate %</AdminFieldLabel><AdminInput type="number" value={form.pass_rate} onChange={(e) => setForm({ ...form, pass_rate: Number(e.target.value) })} className="mt-1.5" /></div>
+            <div>
+              <AdminFieldLabel>Pass rate %</AdminFieldLabel>
+              <AdminInput
+                type="text"
+                inputMode="numeric"
+                min={0}
+                max={100}
+                value={form.pass_rate}
+                onKeyDown={blockNegativeKeys}
+                onChange={(e) => {
+                  const next = parseNonNegative(e.target.value, true);
+                  if (next === null) return;
+                  if (next !== '' && Number(next) > 100) return;
+                  setForm({ ...form, pass_rate: next });
+                }}
+                className="mt-1.5"
+              />
+            </div>
           </div>
           <div><AdminFieldLabel>Badge</AdminFieldLabel><AdminInput value={form.badge || ''} onChange={(e) => setForm({ ...form, badge: e.target.value || null })} className="mt-1.5" /></div>
           <div><AdminFieldLabel>Features (one per line)</AdminFieldLabel><AdminTextarea value={featuresStr} onChange={(e) => setFeaturesStr(e.target.value)} rows={4} className="mt-1.5" /></div>
@@ -337,7 +430,7 @@ export function AdminCourses() {
               <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPictureFile(f); setPicturePreview(URL.createObjectURL(f)); } }} />
             </label>
           </div>
-          <AdminPrimaryButton className="w-full" onClick={handleSave} disabled={saving || !form.title || !form.price}>
+          <AdminPrimaryButton className="w-full" onClick={handleSave} disabled={saving || !form.title || form.price === '' || Number(form.price) <= 0}>
             <Check className="w-4 h-4" /> {saving ? 'Saving…' : editing ? 'Update' : 'Create'}
           </AdminPrimaryButton>
         </div>
@@ -383,7 +476,18 @@ export function AdminCourses() {
                 </div>
                 <div className="w-24">
                   <AdminFieldLabel>Order</AdminFieldLabel>
-                  <AdminInput type="number" value={lessonForm.order_index} onChange={(e) => setLessonForm({ ...lessonForm, order_index: Number(e.target.value) })} className="mt-1.5" />
+                  <AdminInput
+                    type="text"
+                    inputMode="numeric"
+                    min={0}
+                    value={lessonForm.order_index}
+                    onKeyDown={blockNegativeKeys}
+                    onChange={(e) => {
+                      const next = parseNonNegative(e.target.value, true);
+                      if (next !== null) setLessonForm({ ...lessonForm, order_index: next });
+                    }}
+                    className="mt-1.5"
+                  />
                 </div>
               </div>
               <div>

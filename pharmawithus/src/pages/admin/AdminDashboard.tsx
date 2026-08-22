@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, CheckCircle, PoundSterling, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle, DollarSign, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import {
   AdminPageHeader,
@@ -88,8 +88,8 @@ export function AdminDashboard() {
         />
         <AdminStatCard
           label="Revenue"
-          value={`£${stats.totalRevenue.toLocaleString()}`}
-          icon={<PoundSterling className="w-5 h-5" />}
+          value={`$${stats.totalRevenue.toLocaleString()}`}
+          icon={<DollarSign className="w-5 h-5" />}
           tone="ink"
           delay={0.18}
         />
@@ -138,7 +138,7 @@ export function AdminDashboard() {
                   <p className="text-xs text-text-muted truncate">{o.course?.title}</p>
                 </div>
                 <p className="text-sm font-bold text-text shrink-0 hidden sm:block">
-                  {o.course?.currency || '£'}
+                  $
                   {o.amount ?? '—'}
                 </p>
                 <AdminStatusBadge status={o.status} />

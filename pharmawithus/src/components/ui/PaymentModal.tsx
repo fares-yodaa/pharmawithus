@@ -58,7 +58,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                           <img src={LOGO_SRC} alt="" className="h-full w-full object-contain" />
                         </div>
                         <div className="flex-1"><h4 className="font-heading font-bold text-text">{course.title}</h4><p className="text-xs text-text-muted mt-1">{course.subtitle}</p></div>
-                        <div className="text-right shrink-0"><p className="font-heading font-extrabold text-xl text-brand">{course.currency}{course.price}</p><p className="text-xs text-text-muted">One-time</p></div>
+                        <div className="text-right shrink-0"><p className="font-heading font-extrabold text-xl text-brand">${course.price}</p><p className="text-xs text-text-muted">One-time</p></div>
                       </div>
                       <div className="mt-4 pt-3 border-t border-border space-y-2">{course.features.slice(0, 4).map((f, i) => (<div key={i} className="flex items-center gap-2 text-sm text-text-secondary"><Check className="w-3.5 h-3.5 text-brand shrink-0" />{f}</div>))}</div>
                     </div>
@@ -83,7 +83,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                         ))}
                       </div>
                     </div>
-                    <GlowButton onClick={() => setStep('confirm')} className="w-full" size="lg">PAY NOW — {course.currency}{course.price}</GlowButton>
+                    <GlowButton onClick={() => setStep('confirm')} className="w-full" size="lg">PAY NOW — ${course.price}</GlowButton>
                     <div className="flex items-center justify-center gap-4 mt-3 text-xs text-text-muted"><span>No card required</span><span>·</span><span>Fast and secure</span></div>
                     <div className="flex items-center justify-center gap-2 mt-3 text-xs text-text-muted"><Shield className="w-3.5 h-3.5" /><span>Your information is safe and protected.</span></div>
                   </motion.div>

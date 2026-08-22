@@ -28,11 +28,8 @@ export function StickyBuyBar({ visible, selectedCourse, onBuyClick }: StickyBuyB
                   {selectedCourse.title}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-text-muted line-through">
-                    {selectedCourse.currency}{selectedCourse.anchorPrice}
-                  </span>
                   <span className="text-lg font-heading font-extrabold text-brand">
-                    {selectedCourse.currency}{selectedCourse.price}
+                    ${selectedCourse.price}
                   </span>
                 </div>
               </div>

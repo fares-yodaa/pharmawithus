@@ -208,15 +208,8 @@ export function PurchasePage() {
           </div>
         </div>
         <div className="text-right shrink-0">
-          {course.anchor_price > 0 && (
-            <span className="text-xs text-text-muted line-through block">
-              {course.currency}
-              {course.anchor_price}
-            </span>
-          )}
           <span className="font-heading font-extrabold text-2xl text-brand">
-            {course.currency}
-            {course.price}
+            ${course.price}
           </span>
         </div>
       </div>
@@ -304,7 +297,7 @@ export function PurchasePage() {
           disabled={submitting || !name || !email || !file}
           className="w-full !rounded-xl !py-3.5"
         >
-          {submitting ? 'Submitting…' : `Submit order — ${course.currency}${course.price}`}
+          {submitting ? 'Submitting…' : `Submit order — $${course.price}`}
         </UserPrimaryButton>
       </form>
     </div>
