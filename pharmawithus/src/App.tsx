@@ -8,12 +8,14 @@ import { NavBar } from './components/sections/NavBar';
 import { HeroSection } from './components/sections/HeroSection';
 import { TrustMarquee } from './components/sections/TrustMarquee';
 import { CoursesSection } from './components/sections/CoursesSection';
+import { DropInSection } from './components/sections/DropInSection';
 import { HowItWorksSection } from './components/sections/HowItWorksSection';
 import { WhatsInsideSection } from './components/sections/WhatsInsideSection';
 import { WhyChooseSection } from './components/sections/WhyChooseSection';
 import { SocialProofSection } from './components/sections/SocialProofSection';
 import { FinalCTASection } from './components/sections/FinalCTASection';
 import { FooterSection } from './components/sections/FooterSection';
+import { InstagramCTA } from './components/sections/InstagramCTA';
 import { StickyBuyBar } from './components/ui/StickyBuyBar';
 import { LandingPageBackground } from './components/ui/LandingPageBackground';
 
@@ -135,10 +137,12 @@ function LandingPage() {
           onSelectCourse={setSelectedCourse}
           onBuyClick={handleBuyClick}
         />
+        <DropInSection />
         <HowItWorksSection />
         <WhatsInsideSection />
         <WhyChooseSection />
         <SocialProofSection />
+        <InstagramCTA />
         <FinalCTASection onGetStarted={scrollToCourses} />
       </main>
       <FooterSection />

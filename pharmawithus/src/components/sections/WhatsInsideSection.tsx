@@ -6,9 +6,9 @@ export function WhatsInsideSection() {
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-14">
           <h2 className="font-heading font-extrabold text-3xl md:text-4xl text-text">
-            Everything you need to <span className="gradient-text">ace your exams</span>
+            Everything you need to <span className="gradient-text">succeed</span>
           </h2>
-          <p className="mt-3 text-text-secondary max-w-lg mx-auto">A complete learning system — not just videos. Structured for how pharmacy students actually study.</p>
+          <p className="mt-3 text-text-secondary max-w-lg mx-auto">Topic explanations, exam revision, past papers, and one-to-one support — structured for how pharmacy students actually study.</p>
         </motion.div>
 
         {/* Bento grid */}

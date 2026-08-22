@@ -18,6 +18,7 @@ export function FooterSection() {
           <div>
             <p className="font-heading font-bold text-sm text-white/90 mb-4">Explore</p>
             <div className="space-y-2.5">
+              <a href="/#drop-in" className="block text-sm text-white/50 hover:text-brand transition-colors">Drop-in sessions</a>
               <a href="/#courses" className="block text-sm text-white/50 hover:text-brand transition-colors">Courses</a>
               <a href="/#how-it-works" className="block text-sm text-white/50 hover:text-brand transition-colors">How it works</a>
               <a href="/#about" className="block text-sm text-white/50 hover:text-brand transition-colors">What&apos;s inside</a>

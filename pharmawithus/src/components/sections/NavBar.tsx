@@ -32,6 +32,7 @@ export function NavBar({ onJoinNow }: NavBarProps) {
   }, [mobileOpen]);
 
   const links = [
+    { label: 'Drop-in', href: '#drop-in' },
     { label: 'Courses', href: '#courses' },
     { label: 'How it works', href: '#how-it-works' },
     { label: 'About', href: '#about' },

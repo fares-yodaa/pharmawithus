@@ -4,7 +4,7 @@ const steps = [
   {
     step: '01',
     title: 'Choose your course',
-    description: 'Browse our GPhC-aligned programmes and pick what matches your exam — or message us for guidance.',
+    description: 'Browse our GPhC-aligned programmes, book a drop-in session, or message us for guidance.',
     icon: MousePointerClick,
   },
   {

@@ -157,7 +157,7 @@ export function AdminCourses() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this course?')) return;
+    if (!confirm('Delete this course? Related orders and student access will also be removed.')) return;
     try {
       await api.delete(`/admin/courses/${id}`);
       toast.success('Course deleted!');
