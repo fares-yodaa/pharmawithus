@@ -29,7 +29,6 @@ export function ProtectedRoute({ children, adminOnly = false }: ProtectedRoutePr
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If user is admin but tries to access a non-admin protected route (user dashboard)
   if (!adminOnly && isAdmin) {
     return <Navigate to="/admin" replace />;
   }

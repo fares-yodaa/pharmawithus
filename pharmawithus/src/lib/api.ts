@@ -96,13 +96,19 @@ async function executeFetch(
     return executeFetch(method, path, options, true);
   }
 
-  // If STILL 401 after retry → the session is genuinely invalid, log out.
+  // If STILL 401 after retry, only hard-logout when Supabase has no session.
+  // A valid session + API 401 (wrong backend, expired JWT on server) must not
+  // reload the page — that caused /admin to keep refreshing.
   if (response.status === 401 && _isRetry) {
-    console.error('[API] 🚨 401 after retry — session invalid, signing out');
-    toast.error('Your session has expired. Please log in again.');
-    await supabase.auth.signOut();
-    window.location.href = '/login';
-    throw new Error('Session expired');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('[API] 🚨 401 after retry — no session, signing out');
+      toast.error('Your session has expired. Please log in again.');
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+    console.warn('[API] 401 after retry but session still exists — not reloading');
   }
 
   return handleResponse(response, silent);

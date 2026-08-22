@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileReady, setProfileReady] = useState(false);
   const profileRequestId = useRef(0);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setProfile(data as Profile);
     }
+    setProfileReady(true);
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -67,45 +69,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
 
-    const init = async () => {
-      try {
-        // Get initial session
-        const { data: { session: s } } = await supabase.auth.getSession();
+    try {
+      // INITIAL_SESSION is the first load. Do not getSession() and then wipe
+      // profile here — that made admin routes bounce to /dashboard and back.
+      const { data } = supabase.auth.onAuthStateChange((event, s) => {
         setSession(s);
         setUser(s?.user ?? null);
-        if (s?.user) {
-          await fetchProfile(s.user.id);
+
+        if (!s?.user) {
+          profileRequestId.current += 1;
+          setProfile(null);
+          setProfileReady(true);
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.warn('Supabase auth not configured:', err);
-      } finally {
-        setLoading(false);
-      }
 
-      try {
-        // Listen for auth changes
-        const { data } = supabase.auth.onAuthStateChange(
-          (_event, s) => {
-            setSession(s);
-            setUser(s?.user ?? null);
-            if (s?.user) {
-              setProfile(null);
-              setTimeout(() => {
-                void fetchProfile(s.user.id);
-              }, 0);
-            } else {
-              profileRequestId.current += 1;
-              setProfile(null);
-            }
-          }
-        );
-        subscription = data.subscription;
-      } catch (err) {
-        console.warn('Supabase listener not configured:', err);
-      }
-    };
+        if (event === 'TOKEN_REFRESHED') {
+          setLoading(false);
+          return;
+        }
 
-    init();
+        void fetchProfile(s.user.id).finally(() => setLoading(false));
+      });
+      subscription = data.subscription;
+    } catch (err) {
+      console.warn('Supabase listener not configured:', err);
+      setLoading(false);
+      setProfileReady(true);
+    }
 
     return () => {
       subscription?.unsubscribe();
@@ -136,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileRequestId.current += 1;
     setUser(null);
     setProfile(null);
+    setProfileReady(true);
     setSession(null);
 
     const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -143,7 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn('Supabase sign out error:', error.message);
     }
 
-    // Force clear local storage just in case Supabase's background task fails
     for (const key of Object.keys(localStorage)) {
       if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
         localStorage.removeItem(key);
@@ -158,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         session,
         isAdmin: profile?.role === 'admin',
-        loading,
+        loading: loading || Boolean(user && !profileReady),
         signUp,
         signIn,
         signOut,
